@@ -2,8 +2,8 @@
 # Everything learned from building and using GT Mesh lives here.
 # Install: gt mesh packs install deepwork-base
 name: "deepwork-base"
-version: "2.1.0"
-description: "Foundation pack — roles, skills, bug fixes, anti-patterns, routing, governance, worker SLA"
+version: "2.2.0"
+description: "Foundation pack — roles, skills, bug fixes, anti-patterns, routing, governance, worker SLA, session lifecycle"
 author: "gt-local"
 author_github: "freebird-ai"
 tags: "deepwork, foundation, roles, skills, mesh, knowledge, patterns, routing"
@@ -33,3 +33,6 @@ knowledge:
   - knowledge/anti-patterns.md
   - knowledge/mail-routing.md
   - knowledge/worker-sla.md
+  - knowledge/account-cycling.md
+  - knowledge/session-handoffs.md
+  - knowledge/troubleshooting.md
