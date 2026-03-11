@@ -1,0 +1,99 @@
+name: Task / Work Item
+about: Create a work item or task for the team
+title: '[Task] '
+labels: ['task', 'triage']
+body:
+  - type: markdown
+    attributes:
+      value: |
+        Use this template for creating work items, chores, or maintenance tasks.
+
+  - type: input
+    id: rig
+    attributes:
+      label: Rig / Repository
+      description: Which repository/rig does this task affect?
+      placeholder: e.g., ai-planogram, alc-ai-villa, content-studio, etc.
+    validations:
+      required: true
+
+  - type: textarea
+    id: description
+    attributes:
+      label: Task Description
+      description: Clear description of what needs to be done
+      placeholder: Describe the task...
+    validations:
+      required: true
+
+  - type: textarea
+    id: acceptance
+    attributes:
+      label: Acceptance Criteria
+      description: What does "done" look like?
+      placeholder: |
+        - [ ] Criterion 1
+        - [ ] Criterion 2
+        - [ ] Criterion 3
+    validations:
+      required: true
+
+  - type: textarea
+    id: steps
+    attributes:
+      label: Implementation Steps
+      description: High-level steps to complete the task (optional)
+      placeholder: |
+        1. Step one
+        2. Step two
+        3. Step three
+
+  - type: dropdown
+    id: priority
+    attributes:
+      label: Priority
+      description: Task priority level
+      options:
+        - Critical
+        - High
+        - Medium
+        - Low
+    validations:
+      required: true
+
+  - type: dropdown
+    id: effort
+    attributes:
+      label: Estimated Effort
+      description: Rough estimate of effort required
+      options:
+        - XS (< 1 hour)
+        - S (1-4 hours)
+        - M (1-2 days)
+        - L (3-5 days)
+        - XL (1+ weeks)
+
+  - type: input
+    id: assignee
+    attributes:
+      label: Suggested Assignee
+      description: Who should work on this? (optional)
+      placeholder: e.g., deepwork-eng-1, deepwork-eng-2
+
+  - type: textarea
+    id: dependencies
+    attributes:
+      label: Dependencies
+      description: Any blockers or dependencies?
+      placeholder: List any issues, PRs, or external dependencies...
+
+  - type: checkboxes
+    id: checklist
+    attributes:
+      label: Checklist
+      description: Before marking complete
+      options:
+        - label: Task has been implemented
+        - label: Tests have been added/updated
+        - label: Documentation has been updated
+        - label: Code review completed
