@@ -51,3 +51,10 @@ recommended:
   spawn-storm-detect:
     schedule: "*/5 * * * *"
     purpose: "Detect beads stuck in crash loops — not implemented"
+
+  wasteland-sync:
+    schedule: "0 */4 * * *"
+    script: "mayor/scripts/wasteland-sync.sh"
+    log: "logs/wasteland-sync.log"
+    purpose: "Catch-up sync between local beads and wasteland board (deepwork/gt-collab)"
+    added: "2026-04-01"
