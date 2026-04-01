@@ -1,218 +1,113 @@
 description = """
-Sync beads → wasteland as rich, actionable work packages.
+Sync beads ↔ wasteland wanted board.
 
-The Wasteland Sync Dog creates **complete work packages** on the wasteland board
-that an external contributor (human or agent) can pick up with zero context.
+The Wasteland Sync Dog keeps the wasteland board in sync with local beads:
 
-A raw bead like "Fix CORS" becomes a full task with repo, files, current behavior,
-desired behavior, how to test, and acceptance criteria.
+1. **Bead → Wasteland**: Scan all rigs for P0/P1 open beads not yet on wasteland.
+   Post them as wanted items with repo links and project context.
 
-## What Makes a Good Wasteland Item
+2. **Wasteland → Bead**: When a wasteland item is claimed or completed, update
+   the corresponding bead status (if a bead exists).
 
-BAD (raw bead copy):
-  "Fix CORS — restrict allow-origins"
-
-GOOD (work package):
-  Title: "Security: Fix CORS — restrict allowed origins to production domains"
-  Description includes:
-  - Repo: https://github.com/masti-ai/ai-planogram
-  - Files: backend/app/main.py (line ~30, CORSMiddleware config)
-  - Current: allow_origins=["*"] — accepts requests from any domain
-  - Desired: allow_origins=["https://planogram.villamarket.ai", "https://mrmnqxnnmt.ap-southeast-2.awsapprunner.com"]
-  - How to test: curl -H "Origin: https://evil.com" and verify 403
-  - Acceptance: CORS headers only return for whitelisted domains
+3. **Closed beads**: When a bead is closed locally, mark the wasteland item as
+   completed (if not already).
 
 ## Dog Contract
 
-1. Scan rigs for P0/P1 beads not on wasteland
-2. For each: read the bead, read relevant code, write a rich description
-3. FILTER: skip internal/agent/infra beads (deacon, witness, patrol, AGENTS.md, hooks)
-4. Post as wasteland items with full context
-5. Sync status (closed beads → completed wasteland items)
-6. Push to DoltHub
-7. Return to kennel
+This is infrastructure work. You:
+1. Scan all rig beads and compare against wasteland board
+2. Post new beads that aren't on wasteland yet
+3. Sync status changes (claimed/done/closed) both directions
+4. Push wasteland changes to DoltHub
+5. Return to kennel
 
 ## Variables
 
 | Variable | Source | Description |
 |----------|--------|-------------|
-| rigs | config | Comma-separated rig names to scan (default: all product rigs) |
+| rigs | config | Comma-separated rig names to scan (default: all) |
 | max_priority | config | Maximum priority to sync (default: 1 = P0+P1) |
-| push | config | Whether to push to DoltHub after sync (default: true) |
+| push | config | Whether to push to DoltHub after sync (default: false) |
 | dry_run | config | Show what would sync without making changes (default: false) |
-| github_repos | config | JSON map of rig→GitHub repo URL |
+| github_repos | config | JSON map of project→GitHub repo URL |
 """
 
 [metadata]
 type = "dog"
 category = "wasteland"
-schedule = "0 */4 * * *"
-ttl = "45m"
+schedule = "0 */4 * * *"  # every 4 hours
+ttl = "30m"
 
 [variables]
-rigs = { source = "config", default = "officeworld,deepwork_site,villa_alc_ai,villa_ai_planogram,command_center,products,media_studio" }
+rigs = { source = "config", default = "" }
 max_priority = { source = "config", default = "1" }
-push = { source = "config", default = "true" }
+push = { source = "config", default = "false" }
 dry_run = { source = "config", default = "false" }
-github_repos = { source = "config", default = '{"villa_ai_planogram":"https://github.com/masti-ai/ai-planogram","villa_alc_ai":"https://github.com/masti-ai/alc-ai-villa","officeworld":"https://github.com/masti-ai/OfficeWorld","deepwork_site":"https://github.com/masti-ai/website","products":"https://github.com/masti-ai/products","media_studio":"https://github.com/masti-ai/media-studio","command_center":"https://github.com/masti-ai/command-center"}' }
+github_repos = { source = "config", default = '{"ai-planogram":"https://github.com/masti-ai/ai-planogram","alc-ai-villa":"https://github.com/masti-ai/alc-ai-villa","officeworld":"https://github.com/masti-ai/OfficeWorld","deepwork_site":"https://github.com/masti-ai/website","products":"https://github.com/masti-ai/products","media_studio":"https://github.com/masti-ai/media-studio","gt_mesh":"https://github.com/masti-ai/gt-mesh"}' }
 
 [[steps]]
-id = "scan-and-filter"
-title = "Scan rigs, filter to external-worthy beads"
+id = "scan-beads"
+title = "Scan all rigs for unsynced beads"
 description = """
-For each rig, query Dolt for open P0/P1 beads:
+For each rig, run `bd list --json --flat --no-pager` to get all open beads
+up to max_priority. Compare bead IDs against existing wasteland items
+(check description field for "Bead: <id>" pattern).
 
-```bash
-dolt --host 127.0.0.1 --port 3307 --user root --password "" --no-tls sql -q "
-  SELECT id, title, description, priority, issue_type
-  FROM <rig>.issues
-  WHERE status='open' AND priority <= {{max_priority}}
-" -r csv
-```
-
-Then check which are already on wasteland:
-```bash
-gt wl browse --json
-```
-Match by title (first 40 chars, case-insensitive). Skip already-posted items.
-
-**FILTER — skip these beads (internal/agent work, not for external contributors):**
-- Title contains: deacon, witness, refinery, patrol, AGENTS.md, hooks, formula, molecule, wisp
-- Title contains: merge queue, process cleanup, Dolt health, session handoff
-- Title starts with: "Pre-existing:", "Merge:", "Boot:"
-- Issue type is: chore (unless it's clearly product work)
-- Description mentions only internal agent coordination
-
-**KEEP — these are real product work:**
-- Features, bugs, UI changes, API work, docs
-- Clear acceptance criteria or user-facing impact
-- Involves actual code in a repo that external contributors can access
-
-For each bead that passes the filter, add it to the post list.
+Collect list of beads that need posting to wasteland.
 """
 
 [[steps]]
-id = "enrich-and-post"
-title = "Read code context and post rich wasteland items"
-needs = ["scan-and-filter"]
+id = "post-new"
+title = "Post unsynced beads to wasteland"
+needs = ["scan-beads"]
 description = """
-For each filtered bead, create a **complete work package**:
+For each unsynced bead, run:
+  gt wl post --title "<bead title>" --project "<rig-name>" --type "<bug|feature>" \
+    --priority <N> --tags "<tags>" \
+    --description "Bead: <bead-id>\nRepo: <github-url>\nProject: <project>"
 
-**1. Read the bead:**
-```bash
-bd show <bead-id>
-```
-
-**2. Read relevant code** (if the bead mentions files or you can infer them):
-Look at the rig's codebase at `~/gt/<rig>/mayor/rig/` to understand:
-- What files are involved
-- What the current code looks like
-- What needs to change
-
-**3. Write the wasteland description** with this structure:
-
-```
-Bead: <bead-id>
-
-## Context
-<1-2 sentences: what this project is, what this task is about>
-
-## Repo
-<GitHub URL from github_repos config>
-Branch: dev (create feature branch from dev)
-
-## Current Behavior
-<What exists now / what's broken / what's missing>
-
-## Desired Behavior
-<What it should do when this task is complete>
-
-## Key Files
-<List the 2-5 most relevant files with brief descriptions>
-- `path/to/file.py` — what this file does
-- `path/to/component.tsx` — what this component is
-
-## How to Test
-<Step-by-step verification that the work is correct>
-
-## Acceptance Criteria
-<Bullet list of concrete, checkable conditions>
-- [ ] Criterion 1
-- [ ] Criterion 2
-
-## Setup
-git clone <repo-url>
-cd <repo>
-<install/setup commands if known>
-```
-
-**4. Post to wasteland:**
-```bash
-gt wl post \
-  --title "<clear, descriptive title for an outsider>" \
-  --project "<rig-name>" \
-  --type "<bug|feature|docs>" \
-  --priority <N> \
-  --tags "<relevant,tags>" \
-  --description "<the rich description above>"
-```
-
-**Title rules:**
-- Rewrite the bead title if it's too terse or uses internal jargon
-- Include the category: "Security:", "UI:", "API:", "Infra:", "Mobile:", "Dashboard:"
-- Make it scannable — a stranger should know what this is from the title alone
-
-If dry_run=true, print what would be posted but don't actually post.
+Track the mapping: bead-id → wasteland-id for status sync.
 """
 
 [[steps]]
 id = "sync-status"
-title = "Sync closed beads → completed wasteland items"
-needs = ["scan-and-filter"]
+title = "Sync status changes between beads and wasteland"
+needs = ["scan-beads"]
 description = """
-For each rig, find beads closed in the last 24 hours:
+For each wasteland item that has a "Bead: <id>" in its description:
 
-```bash
-dolt --host 127.0.0.1 --port 3307 --user root --password "" --no-tls sql -q "
-  SELECT id, title FROM <rig>.issues
-  WHERE status='closed' AND priority <= {{max_priority}}
-  AND closed_at > DATE_SUB(NOW(), INTERVAL 24 HOUR)
-" -r csv
-```
+1. If bead is closed but wasteland item is open → mark wasteland item completed
+   (gt wl claim + gt wl done with evidence "closed locally")
 
-For each closed bead, find the matching wasteland item by title:
-```bash
-gt wl browse --json
-```
-Match by first 40 chars of title (case-insensitive).
+2. If wasteland item is claimed but bead is unassigned → update bead
+   (this is informational only for now)
 
-If found and still open:
-```bash
-gt wl claim <wl-id>
-gt wl done <wl-id> --evidence "Completed internally. Bead <bead-id> closed."
-```
+3. If wasteland item has completion evidence → log it on the bead
 """
 
 [[steps]]
-id = "push-and-report"
-title = "Push to DoltHub and report"
-needs = ["enrich-and-post", "sync-status"]
+id = "push-dolthub"
+title = "Push wasteland changes to DoltHub"
+needs = ["post-new", "sync-status"]
 description = """
-Push wasteland changes to DoltHub so friends see them:
-```bash
-dolt --host 127.0.0.1 --port 3307 --user root --password "" --no-tls sql -q "
-  USE gt_collab;
-  CALL dolt_add('-A');
-  CALL dolt_commit('-m', 'wasteland sync: <N> posted, <N> completed', '--allow-empty');
-  CALL dolt_push('origin', 'main');
-"
-```
+If push=true, push the local wasteland database to DoltHub:
+  gt wl sync (which fetches upstream first, then we push)
 
-Report summary:
-- N new items posted (with titles)
-- N items completed
-- N items skipped (internal/already posted)
-- Push status
+Or use: cd .wasteland/<org>/<db> && dolt push origin main
 
-If any errors, mail the deacon.
+Skip if dry_run=true.
+"""
+
+[[steps]]
+id = "report"
+title = "Report sync results"
+needs = ["push-dolthub"]
+description = """
+Log summary:
+- N new beads posted to wasteland
+- N status changes synced
+- N items already in sync
+- Push status (success/skipped/failed)
+
+Send report to deacon if any errors occurred.
 """
