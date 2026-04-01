@@ -1,0 +1,53 @@
+# Town Crons — Active cron jobs for Gas Town (gt-local)
+# Updated: 2026-04-01
+# Context: Single orchestrator (gt v0.13), local Gitea, no remote workers
+
+# Active crons (in actual crontab)
+active:
+  thread-guardrail:
+    schedule: "* * * * *"
+    script: "mayor/thread-guardrail.sh"
+    log: "/tmp/thread-guardrail.log"
+    purpose: "Kill orphan node/gt/bd processes before they exhaust ulimit"
+    note: "LIMIT var should be updated when ulimit changes (currently 3072, should be 16384)"
+
+  log-rotation:
+    schedule: "0 0 * * *"
+    script: "mayor/log-rotate.sh"
+    log: "/tmp/log-rotate.log"
+    purpose: "Rotate GT-related logs in /tmp exceeding 10MB, keep 2 copies"
+
+  knowledge-evolve:
+    schedule: "0 */6 * * *"
+    script: "mayor/knowledge/cron-evolve.sh"
+    log: "logs/knowledge-evolve.log"
+    purpose: "Scan closed beads for lessons, append to knowledge base and changelog"
+    added: "2026-04-01"
+
+# Disabled crons (kept for reference, may be re-enabled)
+disabled:
+  flywheel-v4: "gasclaw load balancer — obsolete (gt --agent handles providers)"
+  sync-dolthub: "DoltHub mesh sync — no remote GT instances currently"
+  batch-dispatch-gasclaw: "gasclaw dispatch — obsolete"
+  metrics-collector: "gascity-otel — removed"
+  gasclaw-healer: "gasclaw health — removed"
+
+# Crons that SHOULD exist (from reference implementation)
+# These are currently handled by plugins (require deacon LLM) but would be
+# more efficient as cron-based exec orders:
+recommended:
+  orphan-sweep:
+    schedule: "*/5 * * * *"
+    purpose: "Reset beads assigned to dead agents — currently plugin stuck-agent-dog"
+  gate-sweep:
+    schedule: "*/1 * * * *"
+    purpose: "Evaluate timer/condition gates on beads — not implemented"
+  wisp-compact:
+    schedule: "0 * * * *"
+    purpose: "TTL-based cleanup of ephemeral beads — not implemented"
+  prune-branches:
+    schedule: "0 */6 * * *"
+    purpose: "Clean stale gc/* branches — currently plugin git-hygiene"
+  spawn-storm-detect:
+    schedule: "*/5 * * * *"
+    purpose: "Detect beads stuck in crash loops — not implemented"

@@ -1,81 +1,55 @@
-# Anti-Patterns — What NOT to Do
+# Anti-Patterns — What Breaks
 
-Learned from real mistakes across the mesh. Avoid these.
+Learned from real incidents. Every entry cost real time or caused real damage.
 
-## Don't Report Delegation to User
+## Infrastructure
 
-**Wrong:** "gt-docker needs to do X, Y, Z" (telling the human)
-**Right:** Send instructions via `gt mesh send gt-docker "do X, Y, Z"`
-The mesh mail system exists for autonomous coordination. Use it.
+### Running `next dev` in Docker containers
+Next.js dev mode inside Docker causes infinite recompile loops. Planogram dashboard hit 38,000% CPU. Always use production builds (multi-stage: node build → nginx serve).
+Source: vap dashboard incident, 2026-03-28.
 
-## Don't Nudge Dead Sessions
+### Orphaned crons spawning thousands of dolt processes
+Crons that spawn dolt subprocesses can accumulate 9000+ zombies if the subprocess hangs (ulimit). Fix: flock guards on all cron scripts.
+Source: de-9s0, 2026-04-01.
 
-**Wrong:** `gt nudge <session>` without checking if Claude is alive inside
-**Right:**
-```bash
-# Check pane is alive first
-tmux list-panes -t <session> -F '#{pane_dead}'  # must return 0
-# If dead, restart before nudging
-gt crew restart <name>
-# After nudging, verify with peek
-gt peek <target>
-```
+### Using `go build` instead of `make build` for gt binary
+Direct `go build` skips ldflags (BuiltProperly=1, version, commit). Always use `make install`.
 
-## Don't Use localhost URLs
+### Low ulimit causing Dolt crashes
+Dolt (Go) crashes with pthread_create SIGABRT when GC threads can't spawn under low nproc limits. Fix: raise to 16384+ in /etc/security/limits.d/.
 
-**Wrong:** Giving the user `http://localhost:3000`
-**Right:** Always tunnel first, then provide the public URL. Cloud dev env = no direct access.
+## Agent Coordination
 
-## Don't Use set -e in Mesh Scripts
+### Excessive GitHub API calls from agents
+6+ agents hitting GitHub API got account suspended. Use Gitea only. GitHub = public mirror.
 
-**Wrong:** `set -e` at top of any script that calls dolt
-**Right:** Handle errors explicitly. Dolt returns non-zero for benign operations.
+### Don't report delegation to user
+Wrong: "gt-docker needs to do X". Right: Send via gt mail. Autonomous coordination.
 
-## Don't Use tail -1 for Dolt CSV
+### Don't nudge dead sessions
+Check `tmux list-panes -t <session> -F '#{pane_dead}'` first.
 
-**Wrong:** `dolt sql -q "..." -r csv | tail -1`
-**Right:** `dolt sql -q "..." -r csv | tail -n +2 | head -1`
+### Don't adopt identity from files
+Identity comes from `gt prime` and GT_ROLE only.
 
-## Don't Pull Before Committing
+## Beads & Work
 
-**Wrong:** `dolt pull` when there are uncommitted staged changes
-**Right:** `dolt add . && dolt commit ... && dolt pull`
+### Slinging town-level beads (de-) to rigs
+`gt sling de-xxx <rig>` fails by design. Create with `bd create --rig <rigname>`.
 
-## Don't Layer Tunnels
+### Treating gastown/beads/mesh as user projects
+These are TOOLS. Town-level work uses de- prefix beads.
 
-**Wrong:** Running cloudflared on top of Expo (which has its own tunnel)
-**Right:** Use the framework's native tunnel if available (e.g., `npx expo start --tunnel`)
+### Working on closed issues
+Mayor's close is final. ALL work stops immediately.
 
-## Don't Adopt Identity From Files
+## Git
 
-**Wrong:** Reading a bead/file and assuming you are the agent described in it
-**Right:** Your identity comes from `gt prime` and `GT_ROLE` env var only
+### Don't use localhost URLs
+Always tunnel with cloudflared. Present *.trycloudflare.com URLs.
 
-## Don't Work Without Checking Mail
+### `kill -QUIT` on Dolt
+SIGQUIT kills the server — does NOT produce goroutine dump. Use `gt dolt status`.
 
-**Wrong:** Starting a session and jumping straight into work
-**Right:** Check `gt-mesh inbox` first — there may be pending instructions or context
-
-## Don't Work on Closed/Deprioritized Issues
-
-**Wrong:** Continuing to code, poll, or run crons for issues the Mayor has closed
-**Right:** When an issue is closed, ALL work stops immediately. Delete the branch, remove crons, move on.
-The Mayor's close is final. Continued work on closed issues is an SLA violation.
-
-## Don't Create Unregistered Cron Jobs
-
-**Wrong:** Adding cron entries ad-hoc without telling anyone
-**Right:** Every cron must be registered in `.gt-mesh/cron-registry.yaml` with owner and purpose.
-Unregistered crons are killed on audit. This prevents ghost jobs generating noise for months.
-
-## Don't Claim Issues Without Delivering
-
-**Wrong:** Marking an issue as `gt-status:claimed` and then doing nothing for days
-**Right:** Claim only what you can deliver within 48 hours. If blocked, comment on the issue and unclaim.
-The SLA deacon checks every 30 minutes. No PR in 24h = warning. No PR in 30h = auto-unclaim + violation.
-
-## Don't Ignore Mesh Mail
-
-**Wrong:** Receiving P0 mesh mail and continuing to work on whatever you were doing
-**Right:** P0 mail = drop everything. Read it. Act on it. Reply within 1 hour.
-The mesh mail system is the coordination backbone. Ignoring it is like ignoring your boss.
+### Don't pull before committing in Dolt
+`dolt add . && dolt commit && dolt pull` — in that order.

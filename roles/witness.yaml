@@ -1,0 +1,16 @@
+# Witness — Per-rig lifecycle manager
+name: witness
+scope: rig
+description: "Per-rig lifecycle agent. Monitors polecat health, checks for stale beads, recovers orphaned work, reports to deacon."
+work_dir: "{{.TownRoot}}/{{.Rig}}/witness"
+
+responsibilities:
+  - monitor_polecats     # Check polecat sessions alive
+  - recover_orphans      # Reclaim beads from dead agents
+  - check_refinery       # Verify merge queue isn't stuck
+  - report_status        # Mail deacon with rig health
+
+restrictions:
+  - never_write_code
+  - never_merge
+  - never_create_beads   # Only monitors, doesn't create work

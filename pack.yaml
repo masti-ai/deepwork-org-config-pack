@@ -1,42 +1,38 @@
-# Deepwork Base Pack — Foundation knowledge for Deepwork-AI mesh
-# Everything learned from building and using GT Mesh lives here.
-# Install: gt mesh packs install deepwork-base
-name: "deepwork-base"
-version: "2.3.0"
-description: "Foundation pack — roles, skills, cron definitions, bug fixes, anti-patterns, routing, governance, worker SLA, session lifecycle"
+# Deepwork Org Config Pack — Operational knowledge for Deepwork-AI Gas Town
+# Shared config that all agents and town instances reference.
+# Updated: 2026-04-01 (v3.0.0 — rewrite for gt v0.13, Gitea-only, local beads)
+name: "deepwork-org-config"
+version: "3.0.0"
+description: "Org config pack — agent roles, operational knowledge, cron definitions, hook reference, formula catalog, anti-patterns, runbooks. For gt v0.13+ with Gitea and local Dolt."
 author: "gt-local"
-author_github: "freebird-ai"
-tags: "deepwork, foundation, roles, skills, mesh, knowledge, patterns, routing"
-
-skills:
-  - skills/gt-mesh-setup/SKILL.md
-  - skills/gt-mesh/SKILL.md
-  - skills/gt-mesh-contributor/SKILL.md
+tags: "deepwork, foundation, roles, knowledge, patterns, hooks, formulas, crons, gitea"
 
 roles:
-  - roles/planner.yaml
-  - roles/worker.yaml
-  - roles/reviewer.yaml
+  - roles/mayor.yaml
+  - roles/deacon.yaml
+  - roles/witness.yaml
+  - roles/refinery.yaml
+  - roles/polecat.yaml
+  - roles/crew.yaml
 
 rules:
   - rules/deepwork-governance.yaml
 
-templates:
-  - templates/pr-body.md
-  - templates/mesh.yaml.template
-
 crons:
-  - crons/worker-crons.yaml
-  - crons/coordinator-crons.yaml
+  - crons/town-crons.yaml
 
 knowledge:
-  - knowledge/shared-knowledge.md
-  - knowledge/rules.md
-  - knowledge/conventions.md
-  - knowledge/bug-fixes.md
   - knowledge/anti-patterns.md
-  - knowledge/mail-routing.md
-  - knowledge/worker-sla.md
-  - knowledge/account-cycling.md
-  - knowledge/session-handoffs.md
+  - knowledge/patterns.md
+  - knowledge/decisions.md
+  - knowledge/operations.md
   - knowledge/troubleshooting.md
+  - knowledge/conventions.md
+  - knowledge/hooks-reference.md
+  - knowledge/formulas-reference.md
+  - knowledge/plugins-reference.md
+
+docs:
+  - docs/ARCHITECTURE.md
+  - docs/GLOSSARY.md
+  - docs/RUNBOOKS.md
