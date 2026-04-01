@@ -1,30 +1,52 @@
-# Town Crons — Active cron jobs for Gas Town (gt-local)
+# Town Crons — Active cron jobs for Gas Town
 # Updated: 2026-04-01
-# Context: Single orchestrator (gt v0.13), local Gitea, no remote workers
+# Context: Single orchestrator (gt v0.13), local Gitea, wasteland federation
 
 # Active crons (in actual crontab)
 active:
   thread-guardrail:
     schedule: "* * * * *"
-    script: "mayor/thread-guardrail.sh"
-    log: "/tmp/thread-guardrail.log"
-    purpose: "Kill orphan node/gt/bd processes before they exhaust ulimit"
-    note: "LIMIT var should be updated when ulimit changes (currently 3072, should be 16384)"
+    script: "scripts/mayor/thread-guardrail.sh"
+    log: "logs/thread-guardrail.log"
+    purpose: "Kill orphan node/gt/bd processes before they exhaust ulimit (16384)"
 
   log-rotation:
     schedule: "0 0 * * *"
-    script: "mayor/log-rotate.sh"
-    log: "/tmp/log-rotate.log"
-    purpose: "Rotate GT-related logs in /tmp exceeding 10MB, keep 2 copies"
+    script: "scripts/mayor/log-rotate.sh"
+    log: "logs/log-rotate.log"
+    purpose: "Rotate GT-related logs exceeding 10MB, keep 2 copies"
 
   knowledge-evolve:
     schedule: "0 */6 * * *"
-    script: "mayor/knowledge/cron-evolve.sh"
+    script: "scripts/knowledge/cron-evolve.sh"
     log: "logs/knowledge-evolve.log"
     purpose: "Scan closed beads for lessons, append to knowledge base and changelog"
-    added: "2026-04-01"
 
-# Disabled crons (kept for reference, may be re-enabled)
+  gitea-to-github:
+    schedule: "0 * * * *"
+    script: "scripts/mayor/gitea-to-github.sh"
+    log: "logs/gitea-github-sync.log"
+    purpose: "Mirror Gitea repos to masti-ai GitHub org, create releases for 5+ commits"
+
+  wasteland-push:
+    schedule: "*/15 * * * *"
+    script: "scripts/mayor/wasteland-push.sh"
+    log: "logs/wasteland-push.log"
+    purpose: "Push wasteland changes to DoltHub so federation friends see updates"
+
+  pack-update:
+    schedule: "30 */6 * * *"
+    script: "scripts/mayor/pack-update.sh"
+    log: "logs/pack-update.log"
+    purpose: "Sync knowledge, changelog, formulas, docs to org config pack (Gitea + GitHub)"
+
+  readme-release:
+    schedule: "0 3 * * *"
+    script: "scripts/mayor/readme-release.sh"
+    log: "logs/readme-release.log"
+    purpose: "Create GitHub releases for repos with 10+ new commits since last release"
+
+# Disabled crons (kept for reference)
 disabled:
   flywheel-v4: "gasclaw load balancer — obsolete (gt --agent handles providers)"
   sync-dolthub: "DoltHub mesh sync — no remote GT instances currently"
@@ -32,29 +54,20 @@ disabled:
   metrics-collector: "gascity-otel — removed"
   gasclaw-healer: "gasclaw health — removed"
 
-# Crons that SHOULD exist (from reference implementation)
-# These are currently handled by plugins (require deacon LLM) but would be
-# more efficient as cron-based exec orders:
+# Recommended additions (not yet implemented)
 recommended:
   orphan-sweep:
     schedule: "*/5 * * * *"
-    purpose: "Reset beads assigned to dead agents — currently plugin stuck-agent-dog"
+    purpose: "Reset beads assigned to dead agents"
   gate-sweep:
     schedule: "*/1 * * * *"
-    purpose: "Evaluate timer/condition gates on beads — not implemented"
+    purpose: "Evaluate timer/condition gates on beads"
   wisp-compact:
     schedule: "0 * * * *"
-    purpose: "TTL-based cleanup of ephemeral beads — not implemented"
+    purpose: "TTL-based cleanup of ephemeral beads"
   prune-branches:
     schedule: "0 */6 * * *"
-    purpose: "Clean stale gc/* branches — currently plugin git-hygiene"
+    purpose: "Clean stale polecat branches"
   spawn-storm-detect:
     schedule: "*/5 * * * *"
-    purpose: "Detect beads stuck in crash loops — not implemented"
-
-  wasteland-sync:
-    schedule: "0 */4 * * *"
-    script: "mayor/scripts/wasteland-sync.sh"
-    log: "logs/wasteland-sync.log"
-    purpose: "Catch-up sync between local beads and wasteland board (deepwork/gt-collab)"
-    added: "2026-04-01"
+    purpose: "Detect beads stuck in crash loops"
