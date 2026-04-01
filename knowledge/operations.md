@@ -1,66 +1,59 @@
 # Operations — Debug Shortcuts and Tricks
 
-## Dolt
+Practical operational knowledge for running Gas Town day-to-day.
 
-### Quick health check without gt
+### Raise ulimit in existing Claude sessions (2026-04-01)
+Claude Code inherits the shell's ulimit. If limits.d is updated but session is old:
+```bash
+ulimit -Su 4096  # Raise soft to hard limit (doesn't require re-login)
+```
+Full 16384 requires a new SSH session where PAM applies limits.d.
+
+### Quick Dolt health check without gt (2026-04-01)
 ```bash
 dolt --host 127.0.0.1 --port 3307 --user root --password "" --no-tls sql -q "SELECT 1"
 ```
+If this works but gt commands hang, the issue is in the gt binary (process spawn, circuit breaker, or Dolt query complexity), not Dolt itself.
 
-### List all databases
-```bash
-dolt --host 127.0.0.1 --port 3307 --user root --password "" --no-tls sql -q "SHOW DATABASES"
+### List all P0 beads across rigs via raw SQL (2026-04-01)
+```sql
+SELECT CONCAT(db, '-', id) as bead, title FROM (
+  SELECT 'of' as db, id, title FROM officeworld.issues WHERE status='open' AND priority=0
+  UNION ALL
+  SELECT 'ds' as db, id, title FROM deepwork_site.issues WHERE status='open' AND priority=0
+  UNION ALL
+  SELECT 'vaa' as db, id, title FROM villa_alc_ai.issues WHERE status='open' AND priority=0
+  UNION ALL
+  SELECT 'vap' as db, id, title FROM villa_ai_planogram.issues WHERE status='open' AND priority=0
+) t ORDER BY db, id
 ```
 
-### Schema is `status` not `state`
-The issues table uses `status` column (open/closed), not `state`. Common mistake.
-
-## Process Management
-
-### Check process budget
+### Check what's consuming process budget (2026-04-01)
 ```bash
-ulimit -u                                    # Current limit
-ps -u pratham2 --no-headers | wc -l          # Current usage
-ps -u pratham2 --no-headers -o pid,nlwp,args --sort=-nlwp | head -10  # Thread-heavy
-ps -u pratham2 --no-headers -o pid,ppid,args | awk '$2==1'            # Orphans
+# Total processes
+ps -u pratham2 --no-headers | wc -l
+
+# Thread-heavy consumers
+ps -u pratham2 --no-headers -o pid,nlwp,args --sort=-nlwp | head -10
+
+# Orphaned processes (ppid=1, stuck)
+ps -u pratham2 --no-headers -o pid,ppid,args | awk '$2==1'
+
+# Claude instances eating budget
+ps -u pratham2 --no-headers -o pid,args | grep claude | grep -v grep
 ```
 
-### Emergency agent cleanup order
-1. Kill all witnesses (auto-respawn, not critical)
+### Emergency agent cleanup (2026-03-30)
+When process ceiling is hit and nothing works:
+1. Kill all witnesses: they auto-respawn and aren't critical
 2. Kill orphaned bd/gt (ppid=1)
-3. Kill Go compile if running in /tmp/gastown-patch
+3. Kill the Go compile if one is running in /tmp/gastown-patch
 4. Check ulimit -u and raise if possible
-5. Retry the operation
+5. Then retry the operation
 
-## tmux
-
-### Session naming convention
+### tmux session naming convention
 - `hq-*` — HQ agents (mayor, deacon, boot, dog)
 - `<rig>-witness` — Per-rig witness
 - `<rig>-refinery` — Per-rig refinery
 - `<rig>-polecat-<name>` — Named polecats
 - `<rig>-crew-<name>` — Crew members
-
-### Peek at an agent
-```bash
-tmux capture-pane -t <session> -p -S -30
-```
-
-## Knowledge System
-
-### Capture a lesson
-```bash
-bash ~/gt/mayor/knowledge/capture.sh <type> "<title>" "<body>" "<source>"
-# Types: pattern, anti-pattern, decision, operations, product
-```
-
-### Log a changelog event
-```bash
-bash ~/gt/mayor/changelog/append.sh <type> "<rigs>" "<title>" "<body>"
-# Types: decision, deploy, fix, incident, milestone, infra
-```
-
-### Health check
-```bash
-bash ~/gt/mayor/knowledge/health-check.sh
-```
