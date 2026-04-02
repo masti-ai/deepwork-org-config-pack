@@ -1,0 +1,42 @@
+#!/bin/bash
+# commit-msg hook — Validates commit message format
+# Installed by: enforcement/install.sh
+#
+# Format: type(scope): description
+# Types: feat, fix, refactor, chore, test, docs, perf, ci, build, revert
+# Allows: Merge commits, bd: backup, auto: sync
+
+MSG_FILE="$1"
+MSG=$(head -1 "$MSG_FILE")
+
+# Allow merge commits
+[[ "$MSG" =~ ^Merge ]] && exit 0
+
+# Allow bd/auto system commits
+[[ "$MSG" =~ ^(bd|auto): ]] && exit 0
+
+# Allow revert commits
+[[ "$MSG" =~ ^Revert ]] && exit 0
+
+# Validate conventional commit format
+PATTERN='^(feat|fix|refactor|chore|test|docs|perf|ci|build|revert)(\([a-zA-Z0-9_-]+\))?: .{1,72}$'
+
+if ! echo "$MSG" | grep -qE "$PATTERN"; then
+  echo ""
+  echo "ERROR: Invalid commit message format."
+  echo ""
+  echo "Required: <type>(<scope>): <description>"
+  echo "Types:    feat, fix, refactor, chore, test, docs, perf, ci, build, revert"
+  echo "Example:  feat(vap-123): add JWT auth to photo upload endpoint"
+  echo ""
+  echo "Your message: $MSG"
+  echo ""
+  exit 1
+fi
+
+# Check for Co-Authored-By (warn only, don't block)
+if ! grep -q "Co-Authored-By:" "$MSG_FILE" 2>/dev/null; then
+  echo "WARN: Missing Co-Authored-By trailer. Add one for AI-generated commits."
+fi
+
+exit 0
