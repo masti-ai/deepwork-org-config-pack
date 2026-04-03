@@ -31,3 +31,15 @@ Key architectural and operational decisions. ADR-lite format: context, decision,
 **Context:** Server is remote. User accesses from phone/laptop.
 **Decision:** Use cloudflared tunnels for all user-facing services. Never show localhost URLs.
 **Consequences:** User gets *.trycloudflare.com URLs that work anywhere. Tunnels are ephemeral (restart needed after reboot). Tailscale as backup for persistent access.
+
+### gt-monitor = data layer, command-center = UI layer (2026-04-02)
+gt-monitor collects, stores, and serves rich observability data (tokens, costs, agent health, wasteland metrics, commits, system vitals). Command center becomes the frontend that consumes gt-monitor's API. They merge over time: gt-monitor provides the data, command center renders it. This avoids building two dashboards — dashdev/dashfull polecats should build API endpoints returning JSON, not a standalone UI. The command center (already on port 3100) becomes the single pane of glass.
+Source: mayor-decision-2026-04-02.
+
+### Reputation attribution flows to the dispatcher, not the polecat (2026-04-02)
+When a polecat completes work, the wasteland reputation (stamps, completions) should be attributed to the CREW MEMBER or AGENT that dispatched it, not the town. Polecats are anonymous execution units — the intelligence and credit belongs to whoever created and instructed them. The rigs table has parent_rig for this. Refinery must use parent_rig when calling gt wl done. Crew members need to be registered as rigs on the wasteland.
+Source: mayor-decision-2026-04-02.
+
+### Watchdog auto-detects active rigs — no hardcoded list (2026-04-02)
+The witness/refinery watchdog should NOT have a hardcoded ACTIVE_RIGS list. It should detect which rigs are docked (have open beads with assignees, or have active polecats/crew) and only spin up witnesses + refineries for THOSE rigs. Idle rigs get nothing — saves inference tokens. When a rig gets new work (bead created + slung), the watchdog naturally picks it up next cycle. When a rig goes idle (all beads closed), watchdog stops respawning its agents.
+Source: mayor-decision-2026-04-02.

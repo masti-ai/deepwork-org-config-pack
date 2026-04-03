@@ -1,7 +1,7 @@
 description = """
 Graph-first worktree lifecycle.
 
-This is the built-in v2 workflow prototype for Gas City. It models work as an
+This is the built-in v2 workflow prototype for Gas Town. It models work as an
 explicit DAG with:
 
 - a durable `body` scope bead

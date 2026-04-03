@@ -61,10 +61,36 @@ id = "post-new"
 title = "Post unsynced beads to wasteland"
 needs = ["scan-beads"]
 description = """
-For each unsynced bead, run:
-  gt wl post --title "<bead title>" --project "<rig-name>" --type "<bug|feature>" \
-    --priority <N> --tags "<tags>" \
-    --description "Bead: <bead-id>\nRepo: <github-url>\nProject: <project>"
+For each unsynced bead:
+
+1. Read the bead description and generate specific acceptance criteria (not generic).
+2. Build the wasteland item with required sections: ## Context, ## Current Behavior,
+   ## Desired Behavior, ## Key Files, ## Acceptance Criteria.
+3. Validate with wl-validate.py BEFORE posting:
+
+```bash
+python3 -c "
+import json
+item = {
+    'title': '<bead title>',
+    'project': '<rig-name>',
+    'type': '<bug|feature>',
+    'priority': <N>,
+    'description': '<rich description with sections>'
+}
+print(json.dumps(item))
+" | python3 ~/gt/mayor/scripts/wl-validate.py --stdin --json-out
+```
+
+4. Only post if validation passes:
+```bash
+gt wl post --title "<bead title>" --project "<rig-name>" --type "<bug|feature>" \
+  --priority <N> --tags "<tags>" \
+  --description "<validated description>"
+```
+
+If validation fails, log the error and skip this bead.
+NEVER post items with generic acceptance criteria like "Implementation matches the task description".
 
 Track the mapping: bead-id → wasteland-id for status sync.
 """
