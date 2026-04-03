@@ -3,5 +3,10 @@
   "version": 1,
   "namepool": {
     "style": "mad-max"
+  },
+  "role_agents": {
+    "polecat": "opencode",
+    "witness": "opencode",
+    "refinery": "opencode"
   }
 }

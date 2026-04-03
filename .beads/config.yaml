@@ -53,6 +53,6 @@
 # - github.org
 # - github.repo
 
-prefix: de
-issue-prefix: de
+prefix: 
+issue-prefix: 
 dolt.idle-timeout: "0"
