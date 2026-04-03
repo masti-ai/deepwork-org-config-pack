@@ -58,13 +58,13 @@ Initialize your session and understand your assignment.
 
 **1. Prime your environment:**
 ```bash
-gc prime                    # Load role context
+gt prime                    # Load role context
 bd prime                    # Load beads context
 ```
 
 **2. Check your hook:**
 ```bash
-bd list --assignee=$GC_AGENT --status=in_progress
+bd list --assignee=$GT_AGENT --status=in_progress
 ```
 
 The hook_bead is your assigned issue. Read it carefully:
@@ -85,9 +85,9 @@ You will use it in workspace-setup instead of creating a new one.
 
 **4. Check inbox for additional context:**
 ```bash
-gc mail inbox
+gt mail inbox
 # Read any HANDOFF or assignment messages, then archive after absorbing context
-# gc mail read <id> → process → gc mail archive <id>
+# gt mail read <id> → process → gt mail archive <id>
 ```
 
 **5. Understand the requirements:**
@@ -99,7 +99,7 @@ gc mail inbox
 
 If blocked or unclear, mail Witness:
 ```bash
-gc mail send <rig>/witness -s "HELP: Unclear requirements" -m "Issue: {{issue}}
+gt mail send <rig>/witness -s "HELP: Unclear requirements" -m "Issue: {{issue}}
 Question: <what you need clarified>"
 ```
 
@@ -147,7 +147,7 @@ FORBIDDEN: Pushing to {{base_branch}}. FORBIDDEN: Fixing pre-existing failures.
 
 ```bash
 bd create --title "Pre-existing failure: <description>" --type bug --priority 1
-gc mail send <rig>/witness -s "NOTICE: {{base_branch}} has failing pre-flights" \
+gt mail send <rig>/witness -s "NOTICE: {{base_branch}} has failing pre-flights" \
   -m "Filed: <bead-id>. Proceeding with {{issue}}."
 ```
 
@@ -186,14 +186,14 @@ Do NOT fix unrelated issues in this branch.
 
 **If stuck (>15 minutes):**
 ```bash
-gc mail send <rig>/witness -s "HELP: Stuck on implementation" -m "Issue: {{issue}}
+gt mail send <rig>/witness -s "HELP: Stuck on implementation" -m "Issue: {{issue}}
 Problem: <what's blocking you>
 Tried: <what you've attempted>"
 ```
 
 **If context filling up:**
 ```bash
-gc runtime request-restart
+gt runtime request-restart
 ```
 This blocks until the controller kills your session. The next session
 resumes from context (re-reads formula steps, checks git/bead state).
