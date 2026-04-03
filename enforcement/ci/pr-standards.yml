@@ -1,0 +1,128 @@
+# .github/workflows/pr-standards.yml
+# Validates PR format, commit messages, and branch naming on every PR
+# Copy this to each repo's .github/workflows/
+
+name: PR Standards
+
+on:
+  pull_request:
+    branches: [dev, main]
+    types: [opened, edited, synchronize]
+
+concurrency:
+  group: pr-standarpd-${{ github.event.pull_request.number }}
+  cancel-in-progress: true
+
+jobs:
+  validate-commits:
+    name: Validate Commit Messages
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          fetch-depth: 0
+
+      - name: Setup Node.js
+        uses: actions/setup-node@v4
+        with:
+          node-version: '20'
+
+      - name: Install commitlint
+        run: npm install -g @commitlint/cli @commitlint/config-conventional
+
+      - name: Create commitlint config
+        run: |
+          cat > commitlint.config.js << 'EOF'
+          module.exports = {
+            extends: ['@commitlint/config-conventional'],
+            rules: {
+              'type-enum': [2, 'always', ['feat','fix','refactor','chore','test','docs','perf','ci','build','revert']],
+              'subject-case': [2, 'always', 'lower-case'],
+              'subject-full-stop': [2, 'never', '.'],
+              'header-max-length': [2, 'always', 100],
+            },
+            ignores: [(c) => c.startsWith('Merge'), (c) => c.startsWith('bd:'), (c) => c.startsWith('auto:')],
+          };
+          EOF
+
+      - name: Lint commits
+        run: |
+          npx commitlint --from ${{ github.event.pull_request.base.sha }} --to ${{ github.event.pull_request.head.sha }} --verbose
+
+  validate-branch:
+    name: Validate Branch Name
+    runs-on: ubuntu-latest
+    steps:
+      - name: Check branch name
+        run: |
+          BRANCH="${{ github.head_ref }}"
+          echo "Branch: $BRANCH"
+
+          # Allowed patterns
+          if [[ "$BRANCH" =~ ^gt/[a-zA-Z0-9_-]+/[a-zA-Z0-9_-]+-[a-zA-Z0-9_-]+$ ]] || \
+             [[ "$BRANCH" =~ ^(feature|fix|hotfix)/ ]] || \
+             [[ "$BRANCH" =~ ^gc- ]] || \
+             [[ "$BRANCH" =~ ^release/ ]]; then
+            echo "Branch name OK: $BRANCH"
+          else
+            echo ""
+            echo "::error::Branch name '$BRANCH' does not match allowed patterns."
+            echo "Allowed: gt/<user>/<bead>-<desc>, feature/<desc>, fix/<desc>"
+            echo "Example: gt/user/pa-b65l-add-confidence"
+            exit 1
+          fi
+
+  validate-pr:
+    name: Validate PR Format
+    runs-on: ubuntu-latest
+    steps:
+      - name: Check PR body
+        uses: actions/github-script@v7
+        with:
+          script: |
+            const body = context.payload.pull_request.body || '';
+            const title = context.payload.pull_request.title || '';
+            const errors = [];
+
+            // Title: must follow conventional commit format
+            const titlePattern = /^(feat|fix|refactor|chore|test|docs|perf|ci|build|revert)(\([a-zA-Z0-9_-]+\))?: .{1,72}$/;
+            if (!titlePattern.test(title)) {
+              errors.push(`PR title must match: type(scope): description\nGot: "${title}"`);
+            }
+
+            // Body: must have Summary section
+            if (!body.includes('## Summary') && !body.includes('## What') && !body.includes('## Changes')) {
+              errors.push('PR body must include a ## Summary or ## Changes section');
+            }
+
+            // Body: should reference a bead or issue
+            if (body.length > 0 && !body.match(/[a-z]+-[a-zA-Z0-9]+|#\d+|Closes|Fixes|Resolves/i)) {
+              core.warning('PR body should reference a bead ID or issue number');
+            }
+
+            if (errors.length > 0) {
+              core.setFailed(errors.join('\n\n'));
+            } else {
+              core.info('PR format OK');
+            }
+
+  no-secrets:
+    name: Check for Secrets
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+
+      - name: Scan for secrets
+        run: |
+          # Check for common secret patterns in changed files
+          PATTERNS='(AWS_SECRET_ACCESS_KEY|PRIVATE_KEY|sk-[a-zA-Z0-9]{20,}|ghp_[a-zA-Z0-9]{36}|password\s*=\s*"[^"]{8,})'
+
+          FOUND=$(git diff --name-only origin/${{ github.base_ref }}...HEAD | while read f; do
+            [ -f "$f" ] && grep -lEi "$PATTERNS" "$f" 2>/dev/null
+          done)
+
+          if [ -n "$FOUND" ]; then
+            echo "::error::Possible secrets found in: $FOUND"
+            exit 1
+          fi
+          echo "No secrets detected"

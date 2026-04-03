@@ -1,0 +1,102 @@
+# YourOrg Org Config Pack — Operational knowledge for your-org Gas Town
+# Shared config that all agents, town instances, and external collaborators reference.
+# Updated: 2026-04-01 (v4.0.0 — wasteland federation, full formula set, automation scripts)
+name: "deepwork-org-config"
+version: "4.1.0"
+description: "Complete org config pack — agent roles, 63 formulas, 7 cron jobs, automation scripts, knowledge base, wasteland onboarding, changelog system, wasteland validation tooling. For gt v0.13+ with Gitea, GitHub (your-org), DoltHub wasteland."
+author: "your-org"
+tags: "org-config, foundation, roles, knowledge, formulas, crons, wasteland, automation, github, gitea"
+
+roles:
+  - roles/mayor.yaml
+  - roles/deacon.yaml
+  - roles/witness.yaml
+  - roles/refinery.yaml
+  - roles/polecat.yaml
+  - roles/crew.yaml
+  - roles/coordinator.yaml
+  - roles/planner.yaml
+  - roles/reviewer.yaml
+  - roles/worker.yaml
+
+rules:
+  - rules/deepwork-governance.yaml
+
+crons:
+  - crons/town-crons.yaml
+  - crons/coordinator-crons.yaml
+  - crons/worker-crons.yaml
+  - crons/release-automation.yaml
+
+knowledge:
+  - knowledge/anti-patterns.md
+  - knowledge/patterns.md
+  - knowledge/decisions.md
+  - knowledge/operations.md
+  - knowledge/products.md
+  - knowledge/troubleshooting.md
+  - knowledge/conventions.md
+  - knowledge/hooks-reference.md
+  - knowledge/formulas-reference.md
+  - knowledge/plugins-reference.md
+  - knowledge/shared-knowledge.md
+  - knowledge/bug-fixes.md
+  - knowledge/crew-structure.md
+  - knowledge/mail-routing.md
+  - knowledge/session-handoffs.md
+  - knowledge/worker-sla.md
+  - knowledge/account-cycling.md
+  - knowledge/offloading.md
+  - knowledge/rules.md
+
+formulas:
+  # Core work lifecycle
+  - formulas/mol-polecat-work.formula.toml
+  - formulas/mol-polecat-base.formula.toml
+  - formulas/mol-polecat-commit.formula.toml
+  - formulas/mol-do-work.formula.toml
+  - formulas/mol-scoped-work.formula.toml
+  # Wasteland
+  - formulas/mol-dog-wasteland-sync.formula.toml
+  # (63 total formulas in formulas/ directory)
+
+scripts:
+  # Automation
+  - scripts/mayor/pack-update.sh
+  - scripts/mayor/readme-release.sh
+  - scripts/mayor/gitea-to-github.sh
+  - scripts/mayor/wasteland-push.sh
+  - scripts/mayor/thread-guardrail.sh
+  - scripts/mayor/log-rotate.sh
+  # Wasteland hooks
+  - scripts/wasteland-on-create.sh
+  - scripts/wasteland-on-close.sh
+  # Wasteland validation
+  - scripts/wl-validate.py
+  - scripts/wl-post.sh
+  # Knowledge
+  - scripts/knowledge/capture.sh
+  - scripts/knowledge/cron-evolve.sh
+  - scripts/knowledge/evolve.sh
+  - scripts/knowledge/on-bead-close.sh
+  - scripts/knowledge/health-check.sh
+  # Changelog
+  - scripts/changelog/append.sh
+  # CLI
+  - bin/gt-changelog
+
+hooks:
+  - hooks/claude.json
+
+docs:
+  - docs/ARCHITECTURE.md
+  - docs/GLOSSARY.md
+  - docs/RUNBOOKS.md
+  - docs/wasteland/ONBOARDING.md
+  - docs/changelog/README.md
+
+templates:
+  - templates/wl-template.yaml
+
+blueprints:
+  - blueprints/example-corp/blueprint.yaml

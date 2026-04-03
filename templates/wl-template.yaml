@@ -1,0 +1,45 @@
+# Wasteland Item Template
+# Copy this file, fill in the fields, then run:
+#   python3 mayor/scripts/wl-validate.py --from-file my-item.yaml
+# If valid, it prints the gt wl post command. Run it.
+
+title: "Category: Clear, outsider-readable description"
+project: "project-name"
+type: "feature"       # feature, bug, design, rfc, docs
+priority: 1           # 0=critical, 1=high, 2=medium, 3=low, 4=backlog
+effort: "medium"      # trivial, small, medium, large, epic
+tags: "tag1,tag2"
+
+description:
+  ## Context
+  What this project is and why this task matters. 1-2 sentences.
+
+  ## Repo
+  https://github.com/masti-ai/<repo-name>
+  Branch: dev (create feature branch from dev)
+
+  ## Current Behavior
+  What exists now / what's broken / what's missing.
+
+  ## Desired Behavior
+  What it should do when this task is complete.
+
+  ## Key Files
+  - `path/to/file.py` — what this file does
+  - `path/to/component.tsx` — what this component is
+
+  ## How to Test
+  Step-by-step verification that the work is correct.
+
+  ## Acceptance Criteria
+  - [ ] First checkable condition
+  - [ ] Second checkable condition
+  - [ ] Tests pass
+  - [ ] PR submitted to dev branch
+
+  ## Setup
+  ```
+  git clone https://github.com/masti-ai/<repo>
+  cd <repo>
+  npm install  # or pip install -r requirements.txt
+  ```

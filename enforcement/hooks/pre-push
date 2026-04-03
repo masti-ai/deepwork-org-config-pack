@@ -1,0 +1,38 @@
+#!/bin/bash
+# pre-push hook — Validates branch naming before push
+# Installed by: enforcement/install.sh
+#
+# Allowed patterns:
+#   gt/<agent-or-user>/<bead-id>-<description>
+#   dev, main, master (protected branches — push allowed for authorized agents)
+#   feature/*, fix/*, hotfix/* (standard git-flow patterns)
+
+BRANCH=$(git symbolic-ref --short HEAD 2>/dev/null)
+
+# Allow default branches
+[[ "$BRANCH" =~ ^(dev|main|master)$ ]] && exit 0
+
+# Allow standard patterns
+[[ "$BRANCH" =~ ^(feature|fix|hotfix)/ ]] && exit 0
+
+# Allow Gas Town pattern: gt/<agent>/<bead>-<desc>
+[[ "$BRANCH" =~ ^gt/[a-zA-Z0-9_-]+/[a-zA-Z0-9_-]+-[a-zA-Z0-9_-]+$ ]] && exit 0
+
+# Allow gc- prefixed branches (refinery, polecat worktrees)
+[[ "$BRANCH" =~ ^gc- ]] && exit 0
+
+# Allow release branches
+[[ "$BRANCH" =~ ^release/ ]] && exit 0
+
+echo ""
+echo "ERROR: Branch name '$BRANCH' does not match allowed patterns."
+echo ""
+echo "Allowed formats:"
+echo "  gt/<user-or-agent>/<bead-id>-<description>   (Gas Town work)"
+echo "  feature/<description>                         (feature work)"
+echo "  fix/<description>                             (bug fix)"
+echo "  dev, main                                     (default branches)"
+echo ""
+echo "Example: gt/polecat-nitro/pa-b65l-add-confidence"
+echo ""
+exit 1

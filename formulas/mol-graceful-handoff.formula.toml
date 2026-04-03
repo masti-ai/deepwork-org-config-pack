@@ -1,0 +1,201 @@
+description = """
+Universal graceful handoff formula for ALL persistent agents.
+
+This formula is triggered automatically when an agent approaches context limits
+(via PreCompact hook) or proactively when the agent detects heavy context usage.
+
+Applies to: Mayor, Deacon, Witnesses, Refineries, Crew members.
+Does NOT apply to: Polecats (use gt done instead) or Boot (always fresh).
+
+## When This Runs
+
+1. **PreCompact hook** — Claude Code fires this before compacting context.
+   The hook calls `gt handoff --auto --reason compaction` which triggers this formula.
+2. **Proactive** — Agent notices heavy tool use, many files read, long conversation
+   and explicitly runs `gt handoff -s "HANDOFF: <summary>" --collect`.
+3. **Time-based** — Deacon order fires every 45 minutes for long-running sessions.
+
+## What Gets Preserved
+
+- Hooked molecules (persist on disk, auto-resume via gt prime)
+- Handoff mail (read by next session via gt prime --hook)
+- Git state (committed work survives)
+- Runtime state files (.runtime/session_id, .runtime/last_handoff_ts)
+
+## What Gets LOST Without This
+
+- Everything in the context window
+- Uncommitted file changes
+- Mental model of current work and decisions made
+"""
+formula = "mol-graceful-handoff"
+version = 1
+
+[vars]
+[vars.reason]
+description = "Why the handoff is happening"
+default = "context-limit"
+
+[vars.agent_type]
+description = "Type of agent: mayor, crew, witness, refinery, deacon"
+default = "auto"
+
+[[steps]]
+id = "save-git-state"
+title = "Commit any uncommitted work"
+description = """
+Before handing off, ensure all work is saved to git.
+
+**This is the #1 cause of lost work on crashes.**
+
+```bash
+# Check for uncommitted changes
+git status --porcelain
+```
+
+If there are changes:
+```bash
+# Stage and commit everything
+git add -A
+git commit -m "chore: auto-save before handoff
+
+Reason: {{.reason}}
+Co-Authored-By: Gas Town Handoff <handoff@gastown.local>"
+```
+
+If there's nothing to commit, skip to next step.
+
+**CRITICAL:** Do NOT push — just commit locally. The next session or refinery
+handles pushing. Pushing during handoff adds latency and can fail on network issues."""
+
+[[steps]]
+id = "collect-context"
+title = "Collect context for successor"
+needs = ["save-git-state"]
+description = """
+Gather the state that the successor session needs to resume.
+
+**Step 1: Check hooked work**
+```bash
+gt hook
+```
+Note the hooked molecule/bead ID and its current step.
+
+**Step 2: Check inbox**
+```bash
+gt mail inbox
+```
+Note unread message count and any urgent subjects.
+
+**Step 3: Check active beads (for mayor/crew)**
+```bash
+bd list --status=in_progress --limit=10
+```
+Note what's actively being worked on.
+
+**Step 4: Check git branch and last commit**
+```bash
+git branch --show-current
+git log --oneline -3
+```
+
+**Step 5: Compose handoff summary**
+
+Format (keep it SHORT — 5 lines max):
+```
+What I was doing: <1 sentence>
+What's done: <commits pushed, beads closed>
+What remains: <next steps, blockers>
+Gotchas: <non-obvious things the successor needs to know>
+Active beads: <list of in_progress beads>
+```
+
+**BAD:** 500-word essay about everything you did
+**GOOD:** "Working on pa-df2 dashboard fix. Committed CSS changes (3 files).
+Still need to wire WebSocket handler. Note: port 3201 conflicts with pd rig."
+"""
+
+[[steps]]
+id = "write-handoff-mail"
+title = "Write handoff mail to self"
+needs = ["collect-context"]
+description = """
+Write the handoff mail so the next session can pick up where you left off.
+
+```bash
+gt handoff -s "HANDOFF: <1-line summary of current work>" \
+  --collect \
+  -m "<your 5-line context summary from previous step>"
+```
+
+The `--collect` flag automatically appends:
+- Hooked work status
+- Inbox count
+- Ready beads count
+- Git branch and status
+
+The mail goes to your OWN inbox (--self). The next session's `gt prime --hook`
+reads it and injects the context.
+
+**Fallback:** If Dolt is down and mail fails, write to a local file:
+```bash
+echo "<context summary>" > /tmp/gt-handoff-$(whoami)-$(date +%s).md
+```
+The cold-start-recovery.sh script checks for these fallback files.
+
+**Exit criteria:** Handoff mail written (or fallback file created)."""
+
+[[steps]]
+id = "update-runtime-state"
+title = "Update runtime state files"
+needs = ["write-handoff-mail"]
+description = """
+Update the runtime state so the daemon and other agents know this was a clean handoff.
+
+```bash
+# Update last handoff timestamp
+date -u +"%Y-%m-%dT%H:%M:%SZ" > .runtime/last_handoff_ts 2>/dev/null || true
+```
+
+**For Deacon only:** Also refresh the heartbeat so the daemon doesn't think we died:
+```bash
+gt deacon heartbeat "graceful handoff in progress"
+```
+
+**For Witness/Refinery:** Close the current patrol wisp if one exists:
+```bash
+bd mol wisp gc --closed --force 2>/dev/null || true
+```
+
+**Exit criteria:** Runtime state updated."""
+
+[[steps]]
+id = "exit-or-continue"
+title = "Exit for respawn (or continue if context allows)"
+needs = ["update-runtime-state"]
+description = """
+Decision point: exit or continue.
+
+**If triggered by PreCompact (reason=compaction):**
+Claude Code is about to compact anyway. The handoff mail is written.
+Just let compaction proceed — do NOT exit. The session continues with
+reduced context, and `gt prime` will re-inject role context after compaction.
+
+**If triggered proactively (reason=context-limit or time-based):**
+Exit cleanly. The daemon will respawn a fresh session:
+```bash
+exit 0
+```
+
+The fresh session will:
+1. Start → SessionStart hook fires → `gt prime --hook`
+2. `gt prime` reads the handoff mail from inbox
+3. Agent resumes work with full context budget
+
+**If triggered by reason=idle (long idle timeout):**
+Exit cleanly. No rush to respawn — daemon handles it.
+
+**IMPORTANT:** After this step, either:
+- The session continues (post-compaction) with handoff context in mail
+- The session exits and daemon respawns a fresh one
+Never leave the session in limbo."""
