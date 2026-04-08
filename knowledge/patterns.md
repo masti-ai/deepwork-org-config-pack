@@ -25,6 +25,6 @@ ps -u pratham2 --no-headers -o pid,ppid,args | awk '$2==1 && /bd |gt /' | awk '{
 ```
 Source: Dolt incident 2026-03-30.
 
-### Gitea over GitHub for all agent coordination (2026-03-07)
+### [STALE] Gitea over GitHub for all agent coordination (2026-03-07)
 After the GitHub suspension, all agent git operations moved to Gitea (port 3300). This is faster (local), has no rate limits, and keeps agent API noise off GitHub. GitHub is reserved for public releases only.
 Source: GitHub suspension incident.

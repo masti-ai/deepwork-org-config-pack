@@ -10,7 +10,7 @@ Source: vap dashboard incident. See memory: project_ulimit_fix.md.
 These are TOOLS, not products. Don't create beads in the gastown rig for town infrastructure work. Town-level work uses de- prefix beads. User's actual products: officeworld, deepwork_site, villa_alc_ai, villa_ai_planogram, etc.
 Source: User correction during de-9s0 session.
 
-### Excessive GitHub API calls from agents (2026-03-07)
+### [STALE] Excessive GitHub API calls from agents (2026-03-07)
 6+ agents hitting GitHub API simultaneously got the account suspended. Never use GitHub for agent coordination. Use Gitea locally. GitHub is public mirror only, with zero agent API calls.
 Source: freebird-ai suspension.
 
