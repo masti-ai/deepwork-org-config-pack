@@ -32,6 +32,9 @@ This is infrastructure work. You:
 | github_repos | config | JSON map of project→GitHub repo URL |
 """
 
+formula = "mol-dog-wasteland-sync"
+version = 1
+
 [metadata]
 type = "dog"
 category = "wasteland"
