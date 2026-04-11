@@ -86,7 +86,31 @@ Agents read these files for operational context. The knowledge system auto-evolv
 - **Plugin** (every 12h) harvests knowledge during deacon patrol
 - **Session Stop** hook logs activity to changelog
 
-To capture knowledge manually:
+### Quick Start
+
+```bash
+# Switch GT Mode
+gt mode set turbo
+
+# Create a cron job
+gt cron create --id my-job --schedule "*/5 * * * *" --exec "task.sh"
+
+# Generate docs with DI
+gt di generate readme --rig my-rig
+
+# Use molecule workflow
+gt mol attach my-work
+gt mol step done
+gt mol squash "Summary"
+```
+
+### How-To Guides
+
+- [Work with Smart Cron](docs/how-to/work-with-cron.md) — Cron jobs with retry strategies
+- [Work with DI](docs/how-to/work-with-di.md) — Structured content generation
+
+### Capture Knowledge
+
 ```bash
 bash ~/gt/mayor/knowledge/capture.sh <type> "<title>" "<body>" "<source>"
 # Types: pattern, anti-pattern, decision, operations
