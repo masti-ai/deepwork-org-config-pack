@@ -1,96 +1,215 @@
-# Deepwork Org Config Pack — Operational knowledge for Deepwork-AI Gas Town
-# Shared config that all agents, town instances, and external collaborators reference.
-# Updated: 2026-04-01 (v4.0.0 — wasteland federation, full formula set, automation scripts)
-name: "deepwork-org-config"
-version: "4.0.0"
-description: "Complete org config pack — agent roles, 63 formulas, 7 cron jobs, automation scripts, knowledge base, wasteland onboarding, changelog system. For gt v0.13+ with Gitea, GitHub (masti-ai), DoltHub wasteland."
-author: "deepwork"
-tags: "deepwork, foundation, roles, knowledge, formulas, crons, wasteland, automation, github, gitea"
+# Deepwork Organization Config Pack v4.0.0
+# Shared operational knowledge for Deepwork-AI Gas Town deployments
+#
+# Version History:
+# v4.0.0 (2026-04-11) - Added GT Modes, Molecule system, Smart Cron, DI integration
+# v3.0.0 (2026-04-01) - Modernized roles, knowledge, crons
 
-roles:
-  - roles/mayor.yaml
-  - roles/deacon.yaml
-  - roles/witness.yaml
-  - roles/refinery.yaml
-  - roles/polecat.yaml
-  - roles/crew.yaml
-  - roles/coordinator.yaml
-  - roles/planner.yaml
-  - roles/reviewer.yaml
-  - roles/worker.yaml
+pack:
+  name: deepwork-org-config
+  version: "4.0.0"
+  schema: 1
+  description: |
+    Shared operational knowledge for Deepwork-AI Gas Town deployments.
+    All agents reference this pack for roles, patterns, anti-patterns,
+    operational procedures, and GT mode configurations.
 
-rules:
-  - rules/deepwork-governance.yaml
+# ━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
+# GT MODES — Configurable runtime modes
+# ━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
+#
+# Switch modes: gt mode set <mode>
+# Current mode: gt mode get
+# Override: GT_MODE=eco gt start
 
-crons:
-  - crons/town-crons.yaml
-  - crons/coordinator-crons.yaml
-  - crons/worker-crons.yaml
-  - crons/release-automation.yaml
+modes:
+  eco:
+    description: Low resource mode — reduced agent pool, longer intervals
+    config:
+      agent_pool_max: 2
+      scheduler_interval: "5m"
+      retry_backoff: "2x"
+      di_timeout: "120s"
+      wasteland_sync: "12h"
+      mail_check: "10m"
+      auto_spawn: false
+    agents:
+      worker:
+        idle_timeout: "30m"
+      dog:
+        enabled: ["wasteland-sync", "jsonl-export"]
 
-knowledge:
-  - knowledge/anti-patterns.md
-  - knowledge/patterns.md
-  - knowledge/decisions.md
-  - knowledge/operations.md
-  - knowledge/products.md
-  - knowledge/troubleshooting.md
-  - knowledge/conventions.md
-  - knowledge/hooks-reference.md
-  - knowledge/formulas-reference.md
-  - knowledge/plugins-reference.md
-  - knowledge/shared-knowledge.md
-  - knowledge/bug-fixes.md
-  - knowledge/crew-structure.md
-  - knowledge/mail-routing.md
-  - knowledge/session-handoffs.md
-  - knowledge/worker-sla.md
-  - knowledge/account-cycling.md
-  - knowledge/offloading.md
-  - knowledge/rules.md
+  balanced:
+    description: Default mode — normal resource usage
+    config:
+      agent_pool_max: 5
+      scheduler_interval: "30s"
+      retry_backoff: "1x"
+      di_timeout: "60s"
+      wasteland_sync: "4h"
+      mail_check: "2m"
+      auto_spawn: true
+    agents:
+      worker:
+        idle_timeout: "2h"
+      dog:
+        enabled: ["wasteland-sync", "jsonl-export", "checkpoint", "reaper"]
 
-formulas:
-  # Core work lifecycle
-  - formulas/mol-polecat-work.formula.toml
-  - formulas/mol-polecat-base.formula.toml
-  - formulas/mol-polecat-commit.formula.toml
-  - formulas/mol-do-work.formula.toml
-  - formulas/mol-scoped-work.formula.toml
-  # Wasteland
-  - formulas/mol-dog-wasteland-sync.formula.toml
-  # (63 total formulas in formulas/ directory)
+  turbo:
+    description: High performance mode — maximum throughput
+    config:
+      agent_pool_max: 10
+      scheduler_interval: "10s"
+      retry_backoff: "1x"
+      di_timeout: "30s"
+      wasteland_sync: "1h"
+      mail_check: "30s"
+      auto_spawn: true
+      parallel_dispatch: true
+    agents:
+      worker:
+        idle_timeout: "4h"
+      dog:
+        enabled: ["wasteland-sync", "jsonl-export", "checkpoint", "reaper", "stale-hook", "compactor"]
 
-scripts:
-  # Automation
-  - scripts/mayor/pack-update.sh
-  - scripts/mayor/readme-release.sh
-  - scripts/mayor/gitea-to-github.sh
-  - scripts/mayor/wasteland-push.sh
-  - scripts/mayor/thread-guardrail.sh
-  - scripts/mayor/log-rotate.sh
-  # Wasteland hooks
-  - scripts/wasteland-on-create.sh
-  - scripts/wasteland-on-close.sh
-  # Knowledge
-  - scripts/knowledge/capture.sh
-  - scripts/knowledge/cron-evolve.sh
-  - scripts/knowledge/evolve.sh
-  - scripts/knowledge/on-bead-close.sh
-  - scripts/knowledge/health-check.sh
-  # Changelog
-  - scripts/changelog/append.sh
-  # CLI
-  - bin/gt-changelog
+  maintenance:
+    description: Maintenance mode — pause work, allow admin tasks
+    config:
+      agent_pool_max: 0
+      scheduler_interval: "5m"
+      retry_backoff: "stop"
+      wasteland_sync: "off"
+      mail_check: "off"
+      auto_spawn: false
+      allow_manual: true
+      estop_active: true
+    agents:
+      worker:
+        idle_timeout: "0"
+      dog:
+        enabled: []
+      admin:
+        override: true
 
-hooks:
-  - hooks/claude.json
+  default: balanced
 
-docs:
-  - docs/ARCHITECTURE.md
-  - docs/GLOSSARY.md
-  - docs/RUNBOOKS.md
-  - docs/wasteland/ONBOARDING.md
-  - docs/changelog/README.md
+# ━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
+# MOLECULE SYSTEM
+# ━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
+#
+# Molecules are agent work units managed via `mol` commands
 
-blueprints:
-  - blueprints/deepwork-corp/blueprint.yaml
+molecule_commands:
+  status: "Show what's on an agent's hook"
+  current: "Show current molecule (what agent should work on)"
+  progress: "Show execution progress"
+  attach: "Attach molecule to hook"
+  detach: "Detach molecule from hook"
+  burn: "Burn current molecule (discard without record)"
+  squash: "Squash molecule to digest"
+  step_done: "Complete current step"
+  dag: "Visualize molecule DAG"
+
+# ━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
+# SMART CRON SYSTEM
+# ━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
+#
+# Cron-based scheduling with intelligent retry and dependency management
+
+cron_features:
+  retry_strategies:
+    fixed: "Constant delay between retries"
+    exponential: "Double delay each retry (1x, 2x, 4x, 8x)"
+    linear: "Add constant increment each retry"
+  
+  smart_features:
+    - "Auto-detects missed executions during downtime"
+    - "Coalesces rapid successive triggers"
+    - "Backoff on repeated failures"
+    - "Dependency awareness (waits for dependent orders)"
+    - "Mode-aware (respects eco/turbo settings)"
+
+# ━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
+# HOOKS SYSTEM
+# ━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
+#
+# Claude Code settings.json configurations
+
+hooks_commands:
+  sync: "Regenerate all settings.json files"
+  diff: "Preview sync changes"
+  list: "Show managed locations"
+  scan: "Scan for existing hooks"
+  registry: "List available hooks"
+  install: "Install hook from registry"
+
+hook_locations:
+  rig_base: "{{ .Rig }}/.claude/settings.json"
+  role_overlay: "{{ .Rig }}/.claude/settings.json.d/"
+  agent_specific: "{{ .Rig }}/.claude/agents/<name>.json"
+
+# ━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
+# WASTELAND INTEGRATION
+# ━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
+#
+# Public work board publishing
+
+wasteland_hooks:
+  on_create: "Triggered when bead is created"
+  on_close: "Triggered when bead is closed"
+  on_convoy: "Triggered on convoy lifecycle events"
+
+wasteland_config:
+  auto_sync: true
+  min_priority: 1
+  include_acceptance: true
+
+wasteland_commands:
+  post: "gt wl post --title '...' --type feature --priority 1"
+  stamp: "gt wl stamp <completion-id>"
+  status: "gt wl status"
+
+# ━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
+# DEEPWORK INTELLIGENCE (DI) INTEGRATION
+# ━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
+#
+# Structured content generation via DI MCP
+
+di_integration:
+  templates:
+    readme: "docs_generate(rig, 'readme')"
+    docs: "docs_create(rig, title, doc_type, context)"
+    pr_body: "github_create_pr(rig, branch, base, context)"
+    release: "github_create_release(rig, version, context)"
+  
+  wasteland_ops:
+    flywheel: "wasteland_flywheel(rig)"
+    stamp: "wasteland_stamp(completion_id)"
+    status: "wasteland_status()"
+  
+  context_variables:
+    DiContext: "Current DI session context"
+    DiCatalog: "Available templates and patterns"
+    DiHistory: "Recent DI invocations"
+
+# ━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
+# GT MONITOR CONTROL PLANE
+# ━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
+#
+# API endpoints for town control
+
+gt_monitor:
+  capabilities:
+    - Refinery      # Merge queue processor
+    - Molecules     # Agent molecule workflows
+    - Orphans       # Orphan detection/cleanup
+    - Synthesis     # Work synthesis bundles
+    - Directives    # Agent work instructions
+    - Hooks         # Claude Code hooks
+    - Scheduler     # Capacity-managed dispatch
+    - Formulas      # Workflow templates
+  
+  endpoints:
+    capabilities: "GET /v1/capabilities"
+    execute: "POST /v1/execute"
+    query: "GET /v1/query"

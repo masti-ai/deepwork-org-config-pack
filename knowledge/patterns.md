@@ -1,30 +1,122 @@
 # Patterns — What Works
 
-Recurring approaches that have proven effective in Gas Town operations.
+Proven approaches for Gas Town operations.
 
-### Kill non-essential agents before heavy work (2026-04-01)
-When operating near process limits, kill witnesses for rigs without P0 work before attempting sling/spawn operations. Deacon auto-respawns them later. This frees 10-20 processes per witness killed.
-Source: de-9s0 handoff session.
+## Molecule Workflow Pattern
 
-### Direct Dolt queries bypass gt/bd hangs (2026-04-01)
-When gt/bd commands timeout, query Dolt directly:
+**Use for:** Structured agent work with checkpoints
+
 ```bash
-dolt --host 127.0.0.1 --port 3307 --user root --password "" --no-tls sql -q "QUERY"
+# 1. Attach molecule to hook
+gt mol attach <molecule-id>
+
+# 2. Complete setup step
+gt mol step done
+
+# 3. Do the work...
+
+# 4. Complete implementation
+gt mol step done
+
+# 5. Squash to digest
+gt mol squash "Implement feature X"
+
+# 6. Submit
+gt done
 ```
-This bypasses all the Go binary overhead and circuit-breaker logic. Useful for diagnostics and emergency operations.
-Source: de-9s0 execution session.
 
-### Beads need rig-scoped creation for sling to work (2026-03-31)
-`bd create --rig <rigname> "title"` gives a rig-prefixed ID that `gt sling` understands. Creating at town level (de- prefix) then slinging to a rig fails by design. The ID prefix must match the target rig's database.
-Source: de-2yd investigation.
+**Why it works:**
+- Clear progress tracking
+- Recovery from interruptions
+- Audit trail
 
-### Process cleanup before restart (2026-03-30)
-Before restarting Dolt or the daemon, kill orphaned bd/gt processes (ppid=1) first. They hold stale connections and eat process budget. Pattern:
+## Smart Cron Pattern
+
+**Use for:** Reliable scheduled tasks
+
+```yaml
+[[order]]
+id = "my-task"
+schedule = "*/5 * * * *"
+retry = "exponential"
+retry_max = 3
+mode_aware = true
+```
+
+**Why it works:**
+- Auto-recovery from transient failures
+- Respects GT mode settings
+- Dependencies respected
+
+## GT Mode Pattern
+
+**Use for:** Resource management
+
+| Mode | Use Case |
+|------|----------|
+| eco | Low activity periods, save costs |
+| balanced | Normal operations |
+| turbo | Sprint mode, deadline crunch |
+| maintenance | Downtime, upgrades |
+
 ```bash
-ps -u pratham2 --no-headers -o pid,ppid,args | awk '$2==1 && /bd |gt /' | awk '{print $1}' | xargs kill
+# Switch modes
+gt mode set turbo
+gt mode set eco
 ```
-Source: Dolt incident 2026-03-30.
 
-### [STALE] Gitea over GitHub for all agent coordination (2026-03-07)
-After the GitHub suspension, all agent git operations moved to Gitea (port 3300). This is faster (local), has no rate limits, and keeps agent API noise off GitHub. GitHub is reserved for public releases only.
-Source: GitHub suspension incident.
+## Hook Overlay Pattern
+
+**Use for:** Role-specific agent behavior
+
+```
+.claude/
+├── settings.json           # Base config
+├── settings.json.d/
+│   ├── mayor.json          # Mayor overlay
+│   ├── deacon.json         # Deacon overlay
+│   └── polecat.json        # Polecat overlay
+└── agents/
+    └── alice.json          # Agent-specific
+```
+
+## Wasteland Sync Pattern
+
+**Use for:** Public work board publishing
+
+```bash
+# Auto-sync via config
+wasteland:
+  auto_sync: true
+  min_priority: 1
+  
+# Manual sync
+gt wl post --title "..." --type feature --priority 1
+```
+
+## DI Integration Pattern
+
+**Use for:** Structured content generation
+
+```bash
+# In formulas
+exec = "di-generate --type=readme --context={{ .Input }}"
+
+# Or via MCP
+docs_generate(rig, 'readme')
+```
+
+## Debug Mine Pattern
+
+**Use for:** Deep troubleshooting
+
+```bash
+# Enable debug mine
+gt debug-mine enable
+
+# Auto-capture on issues
+gt debug-mine capture --trigger estop
+
+# Analyze
+gt debug-mine analyze <capture-id>
+```

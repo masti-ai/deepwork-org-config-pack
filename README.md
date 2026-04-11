@@ -2,7 +2,7 @@
 
 Shared operational knowledge for Deepwork-AI Gas Town deployments. All agents reference this pack for roles, patterns, anti-patterns, and operational procedures.
 
-**Version:** 3.0.0 (2026-04-01)
+**Version:** 4.0.0 (2026-04-11)
 
 ## What's Inside
 
@@ -39,8 +39,20 @@ deepwork-org-config-pack/
 │   └── deepwork-corp/blueprint.yaml
 └── templates/
     ├── pr-body.md
-    └── mesh.yaml.template
+    ├── mesh.yaml.template
+    └── debug-mine.yaml.template
 ```
+
+## Key Changes in v4.0.0
+
+- **GT Modes** — Configurable runtime modes (eco, balanced, turbo, maintenance) with resource and scheduling controls
+- **Molecule System** — Agent work units with `mol` commands (attach, burn, squash, step_done)
+- **Smart Cron** — Retry strategies (fixed, exponential, linear), dependency management, mode-aware scheduling
+- **DI Integration** — Deepwork Intelligence MCP for structured content generation
+- **Hooks System** — Claude Code settings management (sync, diff, registry, install)
+- **Wasteland Hooks** — Automated public board publishing with triggers (on_create, on_close, on_convoy)
+- **Debug Mine** — Diagnostic capture system for troubleshooting
+- **GT Monitor** — API control plane integration (64 capabilities)
 
 ## Key Changes in v3.0.0
 
@@ -60,8 +72,12 @@ deepwork-org-config-pack/
 | **gt daemon** | Process manager, plugin scheduler |
 | **Hooks** | Claude Code lifecycle (SessionStart, Stop, PreCompact, etc.) |
 | **Plugins** | 14 deacon patrol tasks on cooldown gates |
-| **Crons** | 3 active: thread guardrail, log rotation, knowledge evolution |
-| **Formulas** | 6 workflow templates (polecat-base, polecat-commit, do-work, scoped-work, + demos) |
+| **Crons** | Smart cron with retry strategies and mode-aware scheduling |
+| **Formulas** | 6+ workflow templates with molecule support |
+| **GT Modes** | eco/balanced/turbo/maintenance runtime configurations |
+| **Molecules** | Agent work units with checkpoint and squash |
+| **DI** | Deepwork Intelligence for structured content |
+| **Debug Mine** | Diagnostic capture for troubleshooting |
 
 ## Using This Pack
 

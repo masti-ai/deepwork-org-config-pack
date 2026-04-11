@@ -1,31 +1,134 @@
 # Anti-Patterns — What Breaks
 
-Things that have caused incidents, wasted time, or confused agents. Avoid these.
+Common mistakes and their consequences.
 
-### Running `next dev` in Docker containers (2026-03-28)
-Next.js dev mode inside a Docker container causes infinite recompile loops. The planogram dashboard hit 38,000% CPU. Always use production builds (multi-stage Dockerfile: node build -> nginx serve) for containerized frontends.
-Source: vap dashboard incident. See memory: project_ulimit_fix.md.
+## Not Using Molecules for Complex Work
 
-### Treating gastown/beads/mesh as user projects (2026-03-31)
-These are TOOLS, not products. Don't create beads in the gastown rig for town infrastructure work. Town-level work uses de- prefix beads. User's actual products: officeworld, deepwork_site, villa_alc_ai, villa_ai_planogram, etc.
-Source: User correction during de-9s0 session.
+**Problem:** Agents lose progress on interruption
 
-### [STALE] Excessive GitHub API calls from agents (2026-03-07)
-6+ agents hitting GitHub API simultaneously got the account suspended. Never use GitHub for agent coordination. Use Gitea locally. GitHub is public mirror only, with zero agent API calls.
-Source: freebird-ai suspension.
+**Symptom:** Half-finished beads, repeated work
 
-### `kill -QUIT` on Dolt (2026-03-30)
-SIGQUIT kills the Dolt server — it does NOT produce a goroutine dump like in standard Go programs. Dolt overrides the signal handler. Use `gt dolt status` for diagnostics instead.
-Source: Dolt incident 2026-03-30.
+**Fix:** Always use molecule workflow for multi-step work
 
-### Orphaned mesh sync crons spawning thousands of dolt processes (2026-03-31)
-Mesh sync crons (every 2 min) each spawn a dolt subprocess. If the subprocess hangs (e.g., due to ulimit), cron spawns another. This created 9000+ zombie dolt processes on the host. Fix: raise ulimit AND add process-already-running guards to cron scripts.
-Source: de-9s0 investigation.
+```bash
+# BAD: Direct work
+gt bead show 123
+# ... work ...
+# (interrupted, no record)
 
-### Slinging town-level beads (de-) to rigs (2026-03-31)
-`gt sling de-xxx <rig>` fails by design. The bead prefix must match the rig's database. Create beads with `bd create --rig <rigname>` to get the correct prefix.
-Source: de-2yd, de-yn5 investigation.
+# GOOD: Molecule workflow
+gt mol attach 123
+gt mol step done  # Setup
+gt mol step done  # Implementation
+gt mol squash "Done"
+```
 
-### Using `go build` instead of `make build` for gt binary (2026-04-01)
-Direct `go build` skips ldflags that set BuiltProperly=1, version, and commit hash. The binary works but prints warnings and may behave differently in production code paths that check BuiltProperly.
-Source: de-9s0 execution.
+## Ignoring GT Modes
+
+**Problem:** Resource waste during low-activity periods
+
+**Symptom:** High costs, idle agents
+
+**Fix:** Set mode based on activity level
+
+```bash
+# End of day
+gt mode set eco
+
+# Sprint start
+gt mode set turbo
+
+# Maintenance window
+gt mode set maintenance
+```
+
+## Hardcoded Schedules Without Mode Awareness
+
+**Problem:** Cron jobs run too frequently in eco mode
+
+**Symptom:** Resource waste, unnecessary work
+
+**Fix:** Use mode_aware: true
+
+```yaml
+# BAD: Fixed schedule
+schedule = "*/1 * * * *"
+
+# GOOD: Mode-aware
+schedule = "*/5 * * * *"
+mode_aware = true  # Becomes */10 in eco
+```
+
+## Not Using Retry Strategies
+
+**Problem:** Transient failures kill jobs permanently
+
+**Symptom:** Failed crons, manual intervention needed
+
+**Fix:** Configure retry with exponential backoff
+
+```yaml
+# BAD: No retry
+[[order]]
+id = "sync"
+exec = "sync.sh"
+
+# GOOD: Retry configured
+[[order]]
+id = "sync"
+exec = "sync.sh"
+retry = "exponential"
+retry_max = 3
+```
+
+## Direct Wasteland Posts Without Review
+
+**Problem:** Poor quality items on public board
+
+**Symptom:** External contributors confused
+
+**Fix:** Use auto_sync with review or manual posting
+
+```yaml
+# BAD: Always auto-post
+wasteland:
+  auto_sync: true
+  
+# GOOD: Review for quality
+wasteland:
+  auto_sync: false  # Mayor reviews
+  min_priority: 1   # Only P0/P1
+```
+
+## Not Handling Hook Failures
+
+**Problem:** Agents run with stale config
+
+**Symptom:** Wrong behavior, errors
+
+**Fix:** Regular hook sync
+
+```bash
+# In cron
+gt hooks sync
+
+# Or check before work
+gt hooks diff
+```
+
+## Debug Mine Disabled During Issues
+
+**Problem:** No context when things break
+
+**Symptom:** Difficult troubleshooting
+
+**Fix:** Enable debug mine by default
+
+```yaml
+debug_mine:
+  enabled: true
+  triggers:
+    - estop
+    - agent_stuck
+    - molecule_burn
+```
