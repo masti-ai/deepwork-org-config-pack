@@ -1,28 +1,90 @@
-# Mayor — Town coordinator, human-facing
-name: mayor
-scope: city
-description: "Town coordinator. Dispatches work via gt sling, reviews PRs, merges, manages town systems (docs, changelog, knowledge). Human-facing."
-work_dir: "{{.TownRoot}}/mayor"
+# Mayor Role — Town Coordinator
+#
+# The mayor is the human (or designated agent) coordinator for Gas Town.
+# They have override capabilities and access to all governance functions.
 
-responsibilities:
-  - dispatch_work        # gt sling <bead> <rig>
-  - review_prs           # Review on Gitea, merge to dev/main
-  - merge                # Only role that merges
-  - maintain_docs        # mayor/docs/, mayor/changelog/, mayor/knowledge/
-  - manage_rigs          # Register rigs, configure agents
-  - human_communication  # Direct interface with the user
+role:
+  name: mayor
+  scope: city
+  description: |
+    Town coordinator with oversight of all rigs, agents, and operations.
+    The mayor handles escalation, cross-rig coordination, and governance.
 
-restrictions:
-  - never_write_product_code  # Polecats/crew write code
-  - never_push_to_main_directly
+# ━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
+# CAPABILITIES
+# ━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
+
+capabilities:
+  # Override capabilities
+  - estop                    # Emergency stop all agents
+  - thaw                     # Resume from estop
+  - mode_set                 # Change GT mode (eco/balanced/turbo/maintenance)
+  
+  # Query capabilities
+  - town_status              # Full town health
+  - beads_overview           # Cross-rig bead status
+  - costs_report             # Resource usage
+  - agent_sessions           # Active sessions
+  
+  # Action capabilities
+  - nudge_any                # Wake any agent
+  - mail_broadcast           # Send to all agents
+  - rig_start_stop           # Control rig lifecycle
+  - formula_install          # Install new formulas
+
+# ━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
+# HOOKS — Claude Code settings
+# ━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
 
 hooks:
-  session_start: "gt prime --hook"
-  stop: "gt costs record"
-  pre_compact: "gt prime --hook"
-  user_prompt_submit: "gt mail check --inject"
+  base: mayor-base
+  overlays:
+    - governance             # Override approvals, escalation
+    - monitoring             # Dashboard access
+    - di_admin               # DI template management
 
-knowledge_duties:
-  - "Log notable events to mayor/changelog/ via append.sh"
-  - "Capture lessons to mayor/knowledge/ via capture.sh"
-  - "Update mayor/docs/ when infrastructure changes"
+# ━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
+# WORKFLOW PREFERENCES
+# ━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
+
+workflow:
+  # Default mode when mayor starts work
+  preferred_mode: balanced
+  
+  # Escalation settings
+  escalation:
+    auto_escalate: false    # Mayor reviews manually
+    notify_on: [estop, critical_error, stuck_beads]
+  
+  # Reporting
+  daily_digest: true
+  weekly_summary: true
+
+# ━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
+# MOLECULE PREFERENCES
+# ━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
+
+molecule:
+  # Mayor uses persistent molecules (not burned)
+  auto_squash: false
+  
+  # Step tracking
+  step_notifications: true
+  
+  # DAG visualization
+  show_dag_on_attach: true
+
+# ━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
+# WASTELAND INTEGRATION
+# ━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
+
+wasteland:
+  # Mayor reviews before publishing
+  auto_sync: false
+  
+  # Can publish to any priority
+  publish_priority: [0, 1, 2, 3]
+  
+  # Review settings
+  review_required: true
+  min_quality_score: 0.8

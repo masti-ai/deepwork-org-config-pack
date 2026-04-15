@@ -36,6 +36,6 @@ ANTHROPIC_BASE_URL = "http://100.108.196.44:4000"
 ANTHROPIC_API_KEY = "<litellm-patrol-key>"
 ```
 
-### Cost Impact
-Before: ~$200-500/month (Claude on patrol)
-After: ~$0 (MiniMax self-hosted on 8xH100)
+### Impact
+Patrol traffic moves off paid Claude inference onto self-hosted MiniMax
+(8xH100). Reasoning-heavy work still routes to Claude.

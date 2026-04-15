@@ -1,14 +1,21 @@
-## Summary
-Brief description of changes.
+# {{ .Title }}
+
+## Context
+{{ .Context }}
 
 ## Changes
--
+{{ range .Changes }}- {{ . }}
+{{ end }}
 
 ## Testing
-- [ ] Tested locally
-- [ ] No secrets committed
+{{ .Testing }}
 
-## Mesh Context
-- Bead:
-- Assigned by:
-- GT: {{GT_ID}}
+## Checklist
+- [ ] Tests pass
+- [ ] Documentation updated
+- [ ] Breaking changes noted
+- [ ] Wasteland sync (if external contributor applicable)
+
+---
+
+**Generated with Deepwork Intelligence** | Mode: {{ .Mode }} | Molecule: {{ .MoleculeId }}

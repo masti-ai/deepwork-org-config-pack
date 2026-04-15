@@ -1,73 +1,201 @@
-# Town Crons — Active cron jobs for Gas Town
-# Updated: 2026-04-01
-# Context: Single orchestrator (gt v0.13), local Gitea, wasteland federation
+# Town Cron Jobs — Smart Cron System
+# 
+# Smart Cron Features:
+# - retry: Strategy for failed jobs (fixed, exponential, linear)
+# - retry_max: Maximum retry attempts
+# - depends_on: Wait for dependent jobs to complete
+# - mode_aware: Respect GT mode settings (eco reduces frequency)
+# - gate: Execution gate type (cron, cooldown, manual)
 
-# Active crons (in actual crontab)
+apiVersion: v1
+kind: CronSchedule
+metadata:
+  name: town-crons
+  version: "4.0.0"
+
+# ━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
+# ACTIVE CRONS — Running in production
+# ━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
+
 active:
-  thread-guardrail:
-    schedule: "* * * * *"
-    script: "scripts/mayor/thread-guardrail.sh"
-    log: "logs/thread-guardrail.log"
-    purpose: "Kill orphan node/gt/bd processes before they exhaust ulimit (16384)"
+  # ── Thread Guardrail ─────────────────────────────────────────────────
+  # Prevents context overflow by monitoring conversation length
+  - id: thread-guardrail
+    schedule: "*/30 * * * *"
+    exec: "${GT_ROOT}/mayor/scripts/thread-guardrail.sh"
+    gate: cron
+    retry: fixed
+    retry_max: 2
+    mode_aware: true
+    description: "Monitor and alert on long-running sessions"
 
-  log-rotation:
-    schedule: "0 0 * * *"
-    script: "scripts/mayor/log-rotate.sh"
-    log: "logs/log-rotate.log"
-    purpose: "Rotate GT-related logs exceeding 10MB, keep 2 copies"
-
-  knowledge-evolve:
+  # ── Log Rotation ──────────────────────────────────────────────────────
+  # Prevents disk fill from log files
+  - id: log-rotation
     schedule: "0 */6 * * *"
-    script: "scripts/knowledge/cron-evolve.sh"
-    log: "logs/knowledge-evolve.log"
-    purpose: "Scan closed beads for lessons, append to knowledge base and changelog"
+    exec: "${GT_ROOT}/mayor/scripts/log-rotate.sh"
+    gate: cron
+    retry: exponential
+    retry_max: 3
+    description: "Rotate and compress log files"
 
-  gitea-to-github:
-    schedule: "0 * * * *"
-    script: "scripts/mayor/gitea-to-github.sh"
-    log: "logs/gitea-github-sync.log"
-    purpose: "Mirror Gitea repos to masti-ai GitHub org, create releases for 5+ commits"
+  # ── Knowledge Evolution ──────────────────────────────────────────────
+  # Harvests lessons from closed beads
+  - id: knowledge-evolution
+    schedule: "0 */6 * * *"
+    exec: "${GT_ROOT}/mayor/scripts/knowledge-evolve.sh"
+    gate: cron
+    retry: exponential
+    retry_max: 3
+    mode_aware: true
+    description: "Auto-evolve knowledge from closed beads"
 
-  wasteland-push:
-    schedule: "*/15 * * * *"
-    script: "scripts/mayor/wasteland-push.sh"
-    log: "logs/wasteland-push.log"
-    purpose: "Push wasteland changes to DoltHub so federation friends see updates"
+  # ── Mesh Sync ────────────────────────────────────────────────────────
+  # Heartbeat and knowledge sync across mesh
+  - id: mesh-sync
+    schedule: "*/2 * * * *"
+    exec: "mesh-sync.sh"
+    gate: cron
+    retry: fixed
+    retry_max: 2
+    description: "Mesh heartbeat and knowledge sync"
 
-  pack-update:
-    schedule: "30 */6 * * *"
-    script: "scripts/mayor/pack-update.sh"
-    log: "logs/pack-update.log"
-    purpose: "Sync knowledge, changelog, formulas, docs to org config pack (Gitea + GitHub)"
+  # ── Wasteland Sync ───────────────────────────────────────────────────
+  # Sync high-priority beads to public board
+  - id: wasteland-sync
+    schedule: "0 */4 * * *"
+    exec: "wasteland-sync.sh --priority-threshold=1"
+    gate: cron
+    retry: exponential
+    retry_max: 3
+    depends_on: [mesh-sync]
+    mode_aware: true
+    description: "Sync P0/P1 beads to wasteland board"
 
-  readme-release:
-    schedule: "0 3 * * *"
-    script: "scripts/mayor/readme-release.sh"
-    log: "logs/readme-release.log"
-    purpose: "Create GitHub releases for repos with 10+ new commits since last release"
+  # ── DI Catalog Sync ──────────────────────────────────────────────────
+  # Keep DI templates up to date
+  - id: di-catalog-sync
+    schedule: "0 2 * * *"
+    exec: "di-catalog-sync.sh"
+    gate: cron
+    retry: exponential
+    retry_max: 3
+    description: "Sync DI catalog with latest templates"
 
-# Disabled crons (kept for reference)
+  # ── Hooks Sync ───────────────────────────────────────────────────────
+  # Regenerate agent hooks from templates
+  - id: hooks-sync
+    schedule: "0 4 * * 0"
+    exec: "hooks sync --dry-run=false"
+    gate: cron
+    retry: fixed
+    retry_max: 2
+    description: "Regenerate all agent hooks"
+
+  # ── Cron Audit ───────────────────────────────────────────────────────
+  # Verify crontab matches order definitions
+  - id: cron-audit
+    schedule: "0 6 * * *"
+    exec: "cron-audit.sh --enforce"
+    gate: cron
+    retry: exponential
+    retry_max: 3
+    description: "Audit and enforce cron configuration"
+
+# ━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
+# MODE-AWARE SCHEDULING
+# ━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
+#
+# When mode_aware: true, intervals are adjusted based on GT mode:
+#   eco:          interval × 2 (e.g., 30min → 1h)
+#   balanced:     interval × 1 (default)
+#   turbo:        interval × 0.5 (e.g., 30min → 15min)
+#   maintenance:  paused (unless allow_manual: true)
+
+mode_schedule_adjustments:
+  eco:
+    multiplier: 2.0
+    max_interval: "24h"
+  balanced:
+    multiplier: 1.0
+  turbo:
+    multiplier: 0.5
+    min_interval: "30s"
+  maintenance:
+    paused: true
+    exceptions: [hooks-sync]  # These still run in maintenance
+
+# ━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
+# DISABLED CRONS — Temporarily paused
+# ━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
+
 disabled:
-  flywheel-v4: "gasclaw load balancer — obsolete (gt --agent handles providers)"
-  sync-dolthub: "DoltHub mesh sync — no remote GT instances currently"
-  batch-dispatch-gasclaw: "gasclaw dispatch — obsolete"
-  metrics-collector: "gascity-otel — removed"
-  gasclaw-healer: "gasclaw health — removed"
+  - id: github-sync
+    reason: "GitHub API rate limits — run manually when needed"
+    exec: "mesh-github-sync.sh"
+    original_schedule: "0 6 * * *"
 
-# Recommended additions (not yet implemented)
+  - id: pack-updater
+    reason: "Replaced by formula-based updates"
+    exec: "pack-update.sh"
+
+# ━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
+# RECOMMENDED CRONS — For new deployments
+# ━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
+
 recommended:
-  orphan-sweep:
+  - id: deacon-patrol
     schedule: "*/5 * * * *"
-    purpose: "Reset beads assigned to dead agents"
-  gate-sweep:
-    schedule: "*/1 * * * *"
-    purpose: "Evaluate timer/condition gates on beads"
-  wisp-compact:
-    schedule: "0 * * * *"
-    purpose: "TTL-based cleanup of ephemeral beads"
-  prune-branches:
-    schedule: "0 */6 * * *"
-    purpose: "Clean stale polecat branches"
-  spawn-storm-detect:
-    schedule: "*/5 * * * *"
-    purpose: "Detect beads stuck in crash loops"
+    exec: "deacon patrol"
+    gate: cooldown
+    cooldown: "5m"
+    description: "Automated town patrol (deacon)"
+
+  - id: witness-patrol
+    schedule: "*/10 * * * *"
+    exec: "witness patrol"
+    gate: cooldown
+    cooldown: "10m"
+    description: "Per-rig lifecycle patrol (witness)"
+
+  - id: refinery-patrol
+    schedule: "*/15 * * * *"
+    exec: "refinery patrol"
+    gate: cooldown
+    cooldown: "15m"
+    description: "Merge queue processing (refinery)"
+
+  - id: stale-hook-detector
+    schedule: "0 */12 * * *"
+    exec: "stale-hooks.sh"
+    gate: cron
+    description: "Detect and unhook stale beads"
+
+  - id: orphan-sweep
+    schedule: "0 3 * * 0"
+    exec: "orphans kill --days=7"
+    gate: cron
+    retry: fixed
+    retry_max: 1
+    description: "Clean up orphaned commits/branches"
+
+# ━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
+# CRON MONITORING
+# ━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
+
+monitoring:
+  alert_on:
+    - consecutive_failures: 3
+    - max_duration_exceeded: "1h"
+    - missed_executions: 2
+  
+  notify_channels:
+    - mail
+    - nudge:mayor
+    - wasteland:incident
+
+  metrics:
+    - execution_count
+    - failure_count
+    - avg_duration
+    - last_success

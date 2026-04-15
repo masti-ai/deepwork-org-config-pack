@@ -1,27 +1,114 @@
-# Deacon — Automated town patrol
-name: deacon
-scope: city
-description: "Automated patrol agent. Spawns witnesses, runs plugins, monitors health, escalates to mayor. Never human-facing."
-work_dir: "{{.TownRoot}}/deacon"
+# Deacon Role — Automated Patrol
+#
+# The Deacon monitors system health and runs automated patrol tasks.
+# It operates in the background with minimal human intervention.
 
-responsibilities:
-  - patrol              # Periodic health scan of all rigs
-  - spawn_witnesses     # Start witness agents for each rig
-  - run_plugins         # Execute plugins on cooldown gates
-  - escalate            # Mail mayor about issues
-  - process_cleanup     # Kill stuck agents, orphaned processes
+role:
+  name: deacon
+  scope: city
+  description: |
+    Automated patrol agent that monitors town health, manages Dogs,
+    and handles lifecycle requests. Runs continuously in background.
 
-restrictions:
-  - never_write_code
-  - never_merge
-  - never_communicate_with_human
+# ━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
+# CAPABILITIES
+# ━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
 
-plugins_executed:
-  - stuck-agent-dog (5m)
-  - dolt-backup (15m)
-  - compactor-dog (30m)
-  - rebuild-gt (1h)
-  - dolt-archive (1h)
-  - quality-review (6h)
-  - knowledge-evolve (12h)
-  - git-hygiene (12h)
+capabilities:
+  # Health monitoring
+  - heartbeat                # Respond to health checks
+  - health_check             # Check agent health
+  - health_state             # Report health status
+  
+  # Recovery operations
+  - redispatch               # Redispatch recovered beads
+  - feed_stranded            # Feed stranded convoys
+  - cleanup_orphans          # Clean up orphaned processes
+  - stale_hooks              # Find and unhook stale beads
+  - zombie_scan              # Find zombie Claude processes
+  - force_kill               # Kill unresponsive sessions
+  
+  # Dog management
+  - dog_spawn                # Spawn Dogs for tasks
+  - dog_reap                 # Clean up completed Dogs
+  
+  # Patrol tasks
+  - patrol_exec              # Execute patrol formulas
+  - plugin_trigger           # Trigger plugins on cooldown
+
+# ━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
+# PATROL TASKS (Plugins)
+# ━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
+
+patrol_tasks:
+  - id: heartbeat-patrol
+    cooldown: "5m"
+    exec: "deacon patrol heartbeat"
+    
+  - id: health-check-patrol
+    cooldown: "10m"
+    exec: "deacon health-check all"
+    
+  - id: stale-hook-patrol
+    cooldown: "1h"
+    exec: "deacon stale-hooks"
+    
+  - id: stranded-feed-patrol
+    cooldown: "30m"
+    exec: "deacon feed-stranded"
+    
+  - id: zombie-scan-patrol
+    cooldown: "1h"
+    exec: "deacon zombie-scan"
+
+# ━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
+# DOG TEMPLATES
+# ━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
+
+dog_templates:
+  wasteland-sync:
+    formula: mol-dog-wasteland-sync
+    schedule: "0 */4 * * *"
+    ttl: "45m"
+    
+  jsonl-export:
+    formula: mol-dog-jsonl
+    schedule: "0 */6 * * *"
+    ttl: "30m"
+    
+  checkpoint:
+    formula: mol-dog-checkpoint
+    cooldown: "1h"
+    ttl: "15m"
+    
+  reaper:
+    formula: mol-dog-reaper
+    cooldown: "2h"
+    ttl: "20m"
+
+# ━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
+# LIFECYCLE
+# ━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
+
+lifecycle:
+  # Deacon is persistent
+  persistent: true
+  idle_timeout: "infinite"
+  
+  # Restart policy
+  auto_restart: true
+  max_restarts_per_hour: 3
+  
+  # Health check
+  health_check_interval: "30s"
+  unhealthy_threshold: 3
+
+# ━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
+# HOOKS
+# ━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
+
+hooks:
+  base: deacon-base
+  overlays:
+    - patrol                 # Patrol patterns
+    - recovery               # Recovery procedures
