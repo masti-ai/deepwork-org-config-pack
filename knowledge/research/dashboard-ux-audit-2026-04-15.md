@@ -25,7 +25,7 @@ Network: all `/v1/*` calls return 200 from `localhost:9090`. No failed requests.
 - Two rig cards (villa_ai_planogram, gt_monitor) — OK
 - "Beads by status" donut showing 1612 total
 - "Active agents" card
-- Footer stats: `$39.43 · 21 · 1612` — unlabeled numbers, no column headers
+- Footer stats row: three unlabeled numbers, no column headers
 - Chat panel eats the bottom third of the screen at all times
 
 **Problems:** too many unlabeled numbers, no clear "what matters right now" headline, chat eating vertical space.
@@ -82,12 +82,12 @@ Network: all `/v1/*` calls return 200 from `localhost:9090`. No failed requests.
 **Problems:** table is mostly `WIP: checkpoint (auto)` rows — the bloat user complained about is visible right here. Need filtering by "real commits only."
 
 ### 09. Activity / Costs (`#activity/costs`)
-- Banner: **"Planning Mode Active — Budget of $100.00"**
-- $100 budget · $0.000 used · 100.0% saved (huge green progress bar)
-- Then a SECOND cost view below: `$45.27` · `1` · `1` · 7 pie charts
+- Banner: "Planning Mode Active — Budget of <amount>"
+- Top card shows budget / used / % saved (huge green progress bar)
+- A SECOND cost view below with different numbers and 7 pie charts
 - "Top 30 rigs by cost" list
 
-**Problems:** TWO conflicting cost views on the same page. The top says $0.000 used; the bottom says $45.27. No explanation why. Probably Planning Mode is a budget simulator, but nothing makes that clear.
+**Problems:** TWO conflicting cost views on the same page with different "used" figures and no explanation. Probably Planning Mode is a budget simulator, but nothing makes that clear.
 
 ### 10. Activity / Changelog / Brief (`#activity/brief`)
 - Dated summary: "Execution Summary • Rig Health • Governance Updates • WIP list"
@@ -96,10 +96,10 @@ Network: all `/v1/*` calls return 200 from `localhost:9090`. No failed requests.
 **Problems:** brief content is flat text, dense, no bead links. Would benefit from the changelog-style per-rig grouping spec'd in gtm-3qv0.
 
 ### 11. Activity / Trends (`#activity/trends`)
-- Sparklines: Tokens by day (678.7k), $10.06 cost, events/commits by day
+- Sparklines: tokens by day, cost by day, events/commits by day
 - Multiple 30-day charts with x-axis dates
 
-**Problems:** some charts look empty / no data. 678.7k tokens — verify against raw.
+**Problems:** some charts look empty / no data. Sparkline totals need reconciliation against raw source.
 
 ### 12. Activity / Plan (`#activity/plan`)
 - Planning Mode summary
@@ -146,7 +146,7 @@ Network: all `/v1/*` calls return 200 from `localhost:9090`. No failed requests.
 
 ### P0-4: Kill unlabeled numbers
 - Every number on the page needs an inline label
-- `$39.43 · 21 · 1612` → `$39.43 cost · 21 stamps · 1612 beads`
+- `<n> · <n> · <n>` → `<n> cost · <n> stamps · <n> beads`
 - Hover tooltips aren't enough; visible labels are the bar
 
 ### P0-5: One source of truth per metric

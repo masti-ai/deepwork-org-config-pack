@@ -1,6 +1,6 @@
 # Plug-and-Play: Gas Town + DeepWorkMind + Wasteland + GT Monitor
 
-**Source:** Overseer directive 2026-04-15 — $1000 AWS credit contingent on proving this works on a fresh EC2.
+**Source:** Overseer directive 2026-04-15 — AWS credit contingent on proving this works on a fresh EC2.
 
 ## Vision
 
@@ -89,7 +89,7 @@ Deliver as: public `masti-ai/gastown` repo release + `install.sh` on GitHub Page
 - Tear down
 - One-pager report with screenshots + logs
 
-$1000 AWS credit from Overseer available for this test phase.
+AWS credit from Overseer available for this test phase.
 
 ## Deliverables
 1. DeepWorkMind audit doc (`research/deepworkmind-audit-2026-04-15.md`)
