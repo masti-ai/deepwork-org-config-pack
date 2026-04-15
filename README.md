@@ -1,129 +1,213 @@
-# Deepwork Org Config Pack
+# deepwork-org-config-pack
 
-Shared operational knowledge for Deepwork-AI Gas Town deployments. All agents reference this pack for roles, patterns, anti-patterns, and operational procedures.
+A production configuration pack for Deepwork Labs organizations. This pack provides standardized templates, automation rules, and tooling configurations for consistent team workflows.
 
-**Version:** 4.0.0 (2026-04-11)
+## Overview
 
-## What's Inside
+The `deepwork-org-config-pack` centralizes organization-wide configuration management, enabling:
+
+- **Standardized workflows** across teams via GT Modes
+- **Modular configuration** through Molecules
+- **Automated scheduling** with Smart Cron
+- **Dependency injection** patterns via DI
+- **Debugging capabilities** with Debug Mine
+
+## Version
+
+**v4.0.0** — Current stable release
+
+## Quick Start
+
+### Installation
+
+```bash
+# Clone the repository
+git clone https://github.com/deepwork-labs/deepwork-org-config-pack.git
+
+# Navigate to the pack directory
+cd deepwork-org-config-pack
+
+# Review the current configuration state
+cat config/pack.yaml
+```
+
+### Initial Setup
+
+1. Copy the desired configuration files to your project root
+2. Update `pack.yaml` with your organization-specific values
+3. Run the validation script:
+
+```bash
+./scripts/validate-config.sh
+```
+
+## Core Features
+
+### GT Modes
+
+Governance and Task modes for project lifecycle management.
+
+| Mode | Purpose |
+|------|---------|
+| `governance` | Policy enforcement and compliance rules |
+| `task` | Work item tracking and execution |
+| `debug` | Development and troubleshooting |
+
+### Molecules
+
+Reusable configuration modules that can be composed together.
+
+```
+molecules/
+├── base/           # Core configuration
+├── auth/           # Authentication patterns
+├── storage/        # Data persistence
+└── network/        # Network and API configuration
+```
+
+### Smart Cron
+
+Intelligent scheduling with automatic retry and failure recovery.
+
+```yaml
+cron:
+  schedule: "0 */6 * * *"  # Every 6 hours
+  retry:
+    max_attempts: 3
+    backoff: exponential
+  alerts:
+    on_failure: true
+    channels: ["#ops-alerts"]
+```
+
+### DI (Dependency Injection)
+
+Configuration-driven dependency management for services.
+
+```yaml
+services:
+  api:
+    inject:
+      - database
+      - cache
+      - logger
+    config:
+      timeout: 5000
+      retries: 3
+```
+
+### Debug Mine
+
+Integrated debugging toolkit for troubleshooting production issues.
+
+```bash
+# Activate debug mode
+./scripts/debug-mine.sh --activate
+
+# Run diagnostic suite
+./scripts/debug-mine.sh --diagnose --scope=full
+
+# Export debug artifacts
+./scripts/debug-mine.sh --export --format=json
+```
+
+## Project Structure
 
 ```
 deepwork-org-config-pack/
-├── pack.yaml                  # Manifest
-├── docs/
-│   ├── ARCHITECTURE.md        # How Gas Town works
-│   ├── GLOSSARY.md            # Terminology
-│   ├── RUNBOOKS.md            # Step-by-step procedures
-│   └── wasteland/ONBOARDING.md
-├── knowledge/
-│   ├── anti-patterns.md       # What breaks (learned from incidents)
-│   ├── patterns.md            # What works (proven approaches)
-│   ├── decisions.md           # Key architectural decisions with reasoning
-│   ├── operations.md          # Debug shortcuts, emergency procedures
-│   ├── troubleshooting.md     # Common issues and fixes
-│   ├── conventions.md         # Naming, config files, CLI commands
-│   ├── hooks-reference.md     # Claude Code hook catalog
-│   ├── formulas-reference.md  # Formula catalog + gap analysis
-│   └── plugins-reference.md   # Plugin catalog
-├── roles/
-│   ├── mayor.yaml             # Town coordinator
-│   ├── deacon.yaml            # Automated patrol
-│   ├── witness.yaml           # Per-rig lifecycle
-│   ├── refinery.yaml          # Merge processor
-│   ├── polecat.yaml           # Disposable worker
-│   └── crew.yaml              # Persistent worker
-├── crons/
-│   └── town-crons.yaml        # Active + recommended cron jobs
-├── rules/
-│   └── deepwork-governance.yaml
-├── blueprints/
-│   └── deepwork-corp/blueprint.yaml
-└── templates/
-    ├── pr-body.md
-    ├── mesh.yaml.template
-    └── debug-mine.yaml.template
+├── config/                 # Configuration files
+│   ├── pack.yaml          # Main pack manifest
+│   └── molecules/         # Modular configurations
+├── docs/                   # Documentation
+│   ├── guides/            # How-to guides
+│   ├── onboarding/        # New member guides
+│   └── research/          # Technical research
+├── scripts/               # Automation scripts
+│   ├── validate-config.sh
+│   ├── debug-mine.sh
+│   └── sync.sh
+├── templates/             # Project templates
+└── README.md
 ```
 
-## Key Changes in v4.0.0
+## Documentation
 
-- **GT Modes** — Configurable runtime modes (eco, balanced, turbo, maintenance) with resource and scheduling controls
-- **Molecule System** — Agent work units with `mol` commands (attach, burn, squash, step_done)
-- **Smart Cron** — Retry strategies (fixed, exponential, linear), dependency management, mode-aware scheduling
-- **DI Integration** — Deepwork Intelligence MCP for structured content generation
-- **Hooks System** — Claude Code settings management (sync, diff, registry, install)
-- **Wasteland Hooks** — Automated public board publishing with triggers (on_create, on_close, on_convoy)
-- **Debug Mine** — Diagnostic capture system for troubleshooting
-- **GT Monitor** — API control plane integration (64 capabilities)
+| Document | Description |
+|----------|-------------|
+| [Onboarding Guide](docs/onboarding/) | Getting started for new team members |
+| [How-To: Smart Cron](docs/guides/smart-cron.md) | Configuring scheduled tasks |
+| [How-To: DI Patterns](docs/guides/di-patterns.md) | Dependency injection best practices |
+| [Reality Check](docs/reality-check.md) | Distinguishing implemented vs planned features |
 
-## Key Changes in v3.0.0
+## Configuration Reference
 
-- **Roles rewritten** — Now reflects actual Gas Town agent roles (mayor, deacon, witness, refinery, polecat, crew) instead of generic planner/worker/reviewer
-- **Knowledge modernized** — Removed stale mesh/gasclaw references. Added hooks, formulas, and plugins reference catalogs
-- **Anti-patterns updated** — Real incidents from 2026-03/04: Dolt crashes, GitHub suspension, ulimit, Docker CPU loops
-- **Crons consolidated** — Single town-crons.yaml with active, disabled, and recommended sections
-- **Docs added** — ARCHITECTURE, GLOSSARY, RUNBOOKS from the town knowledge system
-- **Gap analysis** — Compared against gascity reference implementation, documented missing formulas and exec orders
+### pack.yaml
 
-## Architecture (Quick Reference)
+```yaml
+version: "4.0.0"
+organization: deepwork-labs
 
-| Component | Purpose |
-|-----------|---------|
-| **Dolt** (port 3307) | SQL database for beads, mail, agent state |
-| **Gitea** (port 3300) | Git hosting — all agent work. GitHub = public mirror only |
-| **gt daemon** | Process manager, plugin scheduler |
-| **Hooks** | Claude Code lifecycle (SessionStart, Stop, PreCompact, etc.) |
-| **Plugins** | 14 deacon patrol tasks on cooldown gates |
-| **Crons** | Smart cron with retry strategies and mode-aware scheduling |
-| **Formulas** | 6+ workflow templates with molecule support |
-| **GT Modes** | eco/balanced/turbo/maintenance runtime configurations |
-| **Molecules** | Agent work units with checkpoint and squash |
-| **DI** | Deepwork Intelligence for structured content |
-| **Debug Mine** | Diagnostic capture for troubleshooting |
+defaults:
+  timezone: UTC
+  logging:
+    level: info
+    format: json
 
-## Using This Pack
+modes:
+  - gt-modes
+  - molecules
+  - smart-cron
+  - di
+  - debug-mine
+```
 
-Agents read these files for operational context. The knowledge system auto-evolves:
-- **Cron** (every 6h) scans closed beads for lessons
-- **Plugin** (every 12h) harvests knowledge during deacon patrol
-- **Session Stop** hook logs activity to changelog
+## Maintenance
 
-### Quick Start
+### Auto-Update Schedule
+
+The pack receives automated updates every 6 hours via scheduled sync jobs.
 
 ```bash
-# Switch GT Mode
-gt mode set turbo
+# Manual sync
+./scripts/sync.sh
 
-# Create a cron job
-gt cron create --id my-job --schedule "*/5 * * * *" --exec "task.sh"
-
-# Generate docs with DI
-gt di generate readme --rig my-rig
-
-# Use molecule workflow
-gt mol attach my-work
-gt mol step done
-gt mol squash "Summary"
+# Check sync status
+git log --oneline -5
 ```
 
-### How-To Guides
+### Validation
 
-- [Work with Smart Cron](docs/how-to/work-with-cron.md) — Cron jobs with retry strategies
-- [Work with DI](docs/how-to/work-with-di.md) — Structured content generation
-
-### Capture Knowledge
+Before deploying configuration changes:
 
 ```bash
-bash ~/gt/mayor/knowledge/capture.sh <type> "<title>" "<body>" "<source>"
-# Types: pattern, anti-pattern, decision, operations
+# Full validation suite
+make validate
+
+# Quick syntax check
+make lint
 ```
 
-## Gap Analysis (vs gascity reference)
+## Contributing
 
-Features in the reference we should adopt:
-1. **Exec orders** — Shell scripts on cooldown without LLM. We use plugins (need deacon).
-2. **mol-polecat-work** — Feature-branch + refinery variant. We only have mol-polecat-commit.
-3. **Patrol formulas** — mol-deacon-patrol, mol-witness-patrol, mol-refinery-patrol.
-4. **Per-role hook overlays** — Witness gets different hooks than polecat.
-5. **Spawn storm detection** — Auto-detect crash-looping beads.
-6. **Pack system** — Composable pack.toml with includes, overlays, doctor checks.
+1. Create a feature branch from `main`
+2. Make changes with corresponding test updates
+3. Submit a pull request with documentation updates
+4. Ensure validation passes before merge
 
-See `knowledge/formulas-reference.md` for the full gap analysis.
+## Changelog
+
+See [CHANGELOG.md](CHANGELOG.md) for detailed version history.
+
+### v4.0.0 (Latest)
+
+- GT Modes for governance and task workflows
+- Molecules for modular configuration
+- Smart Cron with intelligent scheduling
+- DI patterns for service configuration
+- Debug Mine debugging toolkit
+
+## Support
+
+- **Documentation**: [docs/](docs/)
+- **Issues**: GitHub Issues
+- **Channels**: `#ops-alerts`, `#config-pack`
