@@ -1,18 +1,12 @@
-# Deepwork Org Config Pack — v5.0.0
-# Onboarding substrate for new Deepwork org members + any Mind install.
-# Updated: 2026-04-18 — aligns with Deepwork Mind v1 (project-first, bd as
-# work graph, bead_audit plugin, harness-agnostic event listener).
-#
-# v4 shipped the Gas-Town-internal operational model (63 formulas, wasteland
-# handlers, crew roles). Most of that is internal mayor/polecat/refinery
-# plumbing and has been moved to archive/2026-04-pre-mind-v5/ for
-# reference. v5 keeps only what a new org member + a fresh Mind install
-# actually need.
+# Deepwork Org Config Pack — v5.1.0
+# Lean onboarding substrate. Zero Gas-Town runtime internals.
+# Updated: 2026-04-18 — aligned with Deepwork Mind v1.
+
 name: "deepwork-org-config"
-version: "5.0.0"
-description: "Onboarding config pack for Deepwork org — Mind install, hooks, skills, core formulas, foundational knowledge. Gas Town ops archived separately."
+version: "5.1.0"
+description: "Lean onboarding config pack for Deepwork Mind users. Mind setup, hooks, 15 product formulas, 10 knowledge files. Auto-refreshes knowledge nightly via DI MCP."
 author: "deepwork"
-tags: "deepwork, mind, onboarding, hooks, skills, workflows, bead-audit"
+tags: "deepwork, mind, onboarding, hooks, bead-audit"
 
 roles:
   - roles/mayor.yaml
@@ -22,22 +16,18 @@ rules:
   - rules/deepwork-governance.yaml
 
 crons:
-  - crons/worker-crons.yaml
+  - crons/pack-auto-refresh.yaml
 
 knowledge:
   - knowledge/deepwork-mind-setup.md
   - knowledge/deepwork-mind-tools.md
   - knowledge/hooks-reference.md
   - knowledge/bead-audit-plugin.md
-  - knowledge/plugins-reference.md
   - knowledge/anti-patterns.md
   - knowledge/patterns.md
   - knowledge/decisions.md
   - knowledge/conventions.md
   - knowledge/products.md
-  - knowledge/rules.md
-  - knowledge/shared-knowledge.md
-  - knowledge/bug-fixes.md
   - knowledge/troubleshooting.md
 
 formulas:
@@ -45,11 +35,20 @@ formulas:
   - formulas/beads-creation-expansion.formula.toml
   - formulas/beads-release.formula.toml
   - formulas/beads-review-to-plan-expansion.formula.toml
+  - formulas/plan-workflow.formula.toml
+  - formulas/plan-writing-expansion.formula.toml
+  - formulas/plan-review-to-spec-expansion.formula.toml
+  - formulas/spec-workflow.formula.toml
+  - formulas/spec-brainstorm-expansion.formula.toml
+  - formulas/spec-questions-interview-expansion.formula.toml
+  - formulas/spec-multimodal-review-expansion.formula.toml
+  - formulas/spec-multimodal-scope-questions-expansion.formula.toml
   - formulas/code-review.formula.toml
+  - formulas/security-audit.formula.toml
   - formulas/design.formula.toml
-  - formulas/cooking.formula.toml
 
 scripts:
+  - scripts/pack_auto_refresh.sh
   - scripts/readme-release.sh
   - scripts/changelog/append.sh
   - scripts/knowledge/capture.sh
@@ -58,13 +57,9 @@ scripts:
   - scripts/knowledge/on-bead-close.sh
   - scripts/knowledge/health-check.sh
 
-skills:
-  - skills/gt-mesh/
-  - skills/gt-mesh-contributor/
-  - skills/gt-mesh-setup/
+# No skills block — Mind manages skills. The 3 gt-mesh skills (month-old,
+# unused) were dropped. New skills land via `mind skill_install` at the
+# project level, not via pack bundling.
 
 hooks:
   - hooks/claude.json
-
-blueprints:
-  - blueprints/deepwork-corp/

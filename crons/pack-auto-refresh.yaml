@@ -1,0 +1,32 @@
+# Auto-refresh the config pack from live Deepwork Mind state.
+#
+# Schedule: daily at 03:00 UTC (quiet hours for most orgs).
+# What it does:
+#   1. Pulls recent memories (kind=pattern|decision|feedback, top_k=30)
+#      scoped to org-visibility projects — anything that should be part
+#      of onboarding knowledge for new members.
+#   2. Regenerates knowledge/patterns.md, decisions.md, conventions.md
+#      via DI MCP docs_generate using those memories as source.
+#   3. Diffs output vs current file; commits if changed with a
+#      "pack-auto-refresh" signature so human reviewers can audit.
+#
+# The cron uses the Deepwork Mind MCP tools — not raw SQL, not local file
+# scraping. Everything flows through the product surface so external
+# installs running the same cron get the same behaviour against their
+# own Mind instance.
+name: pack-auto-refresh
+cron: "0 3 * * *"
+tool: scripts/pack_auto_refresh.sh
+enabled: true
+description: |
+  Nightly regeneration of knowledge/patterns.md, decisions.md, conventions.md
+  from recent high-importance memories via DI MCP. Runs only if there are
+  new memories since the last refresh (checkpoint in .last-refresh).
+env:
+  # The MCP endpoint Mind speaks to — DEEPWORK_API_URL or local.
+  DEEPWORK_API_URL: "${DEEPWORK_API_URL:-https://api.deepwork.art}"
+  # Memory filters — keep tight so the refresh doesn't flood knowledge
+  # files with low-signal entries.
+  PACK_REFRESH_MIN_IMPORTANCE: "0.6"
+  PACK_REFRESH_TOP_K: "30"
+  PACK_REFRESH_SCOPE: "org"
