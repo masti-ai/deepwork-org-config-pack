@@ -1,6 +1,7 @@
 {
   "skipDangerousModePermissionPrompt": true,
   "editorMode": "normal",
+  "_comment": "Deepwork hooks baseline, v5.0.0 — aligns with ~/.claude-accounts/*/hooks/. Never use 'gc' (gas-city) commands — mandate: use 'gt' only. See knowledge/hooks-reference.md.",
   "hooks": {
     "SessionStart": [
       {
@@ -8,7 +9,11 @@
         "hooks": [
           {
             "type": "command",
-            "command": "export PATH=\"$HOME/go/bin:$HOME/.local/bin:$PATH\" && gc prime --hook"
+            "command": "export PATH=\"$HOME/go/bin:$HOME/.local/bin:$PATH\" && /home/pratham2/.claude/hooks/memory-recall-session-start.sh"
+          },
+          {
+            "type": "command",
+            "command": "export PATH=\"$HOME/go/bin:$HOME/.local/bin:$PATH\" && gt prime --hook"
           }
         ]
       }
@@ -19,7 +24,7 @@
         "hooks": [
           {
             "type": "command",
-            "command": "export PATH=\"$HOME/go/bin:$HOME/.local/bin:$PATH\" && gc prime --hook"
+            "command": "export PATH=\"$HOME/go/bin:$HOME/.local/bin:$PATH\" && /home/pratham2/gt/deepwork_intelligence/agents/handoff/precompact_hook.sh"
           }
         ]
       }
@@ -30,22 +35,42 @@
         "hooks": [
           {
             "type": "command",
-            "command": "export PATH=\"$HOME/go/bin:$HOME/.local/bin:$PATH\" && gc nudge drain --inject"
-          },
-          {
-            "type": "command",
-            "command": "export PATH=\"$HOME/go/bin:$HOME/.local/bin:$PATH\" && gc mail check --inject"
+            "command": "export PATH=\"$HOME/go/bin:$HOME/.local/bin:$PATH\" && timeout 5 gt mail check --inject"
           }
         ]
       }
     ],
-    "Stop": [
+    "PreToolUse": [
       {
-        "matcher": "",
+        "matcher": "Write|Edit",
         "hooks": [
           {
             "type": "command",
-            "command": "export PATH=\"$HOME/go/bin:$HOME/.local/bin:$PATH\" && gc hook --inject"
+            "command": "/home/pratham2/.claude/hooks/readme-guard.sh"
+          }
+        ]
+      }
+    ],
+    "PostToolUse": [
+      {
+        "matcher": "Bash",
+        "hooks": [
+          {
+            "type": "command",
+            "command": "/home/pratham2/.claude/hooks/post-close-emit.sh"
+          },
+          {
+            "type": "command",
+            "command": "/home/pratham2/.claude/hooks/epic-mountain-guard.sh"
+          }
+        ]
+      },
+      {
+        "matcher": "Write|Edit",
+        "hooks": [
+          {
+            "type": "command",
+            "command": "/home/pratham2/.claude/hooks/memory-mirror.sh"
           }
         ]
       }

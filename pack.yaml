@@ -1,96 +1,70 @@
-# Deepwork Org Config Pack — Operational knowledge for Deepwork-AI Gas Town
-# Shared config that all agents, town instances, and external collaborators reference.
-# Updated: 2026-04-01 (v4.0.0 — wasteland federation, full formula set, automation scripts)
+# Deepwork Org Config Pack — v5.0.0
+# Onboarding substrate for new Deepwork org members + any Mind install.
+# Updated: 2026-04-18 — aligns with Deepwork Mind v1 (project-first, bd as
+# work graph, bead_audit plugin, harness-agnostic event listener).
+#
+# v4 shipped the Gas-Town-internal operational model (63 formulas, wasteland
+# handlers, crew roles). Most of that is internal mayor/polecat/refinery
+# plumbing and has been moved to archive/2026-04-pre-mind-v5/ for
+# reference. v5 keeps only what a new org member + a fresh Mind install
+# actually need.
 name: "deepwork-org-config"
-version: "4.0.0"
-description: "Complete org config pack — agent roles, 63 formulas, 7 cron jobs, automation scripts, knowledge base, wasteland onboarding, changelog system. For gt v0.13+ with Gitea, GitHub (masti-ai), DoltHub wasteland."
+version: "5.0.0"
+description: "Onboarding config pack for Deepwork org — Mind install, hooks, skills, core formulas, foundational knowledge. Gas Town ops archived separately."
 author: "deepwork"
-tags: "deepwork, foundation, roles, knowledge, formulas, crons, wasteland, automation, github, gitea"
+tags: "deepwork, mind, onboarding, hooks, skills, workflows, bead-audit"
 
 roles:
   - roles/mayor.yaml
-  - roles/deacon.yaml
-  - roles/witness.yaml
-  - roles/refinery.yaml
-  - roles/polecat.yaml
   - roles/crew.yaml
-  - roles/coordinator.yaml
-  - roles/planner.yaml
-  - roles/reviewer.yaml
-  - roles/worker.yaml
 
 rules:
   - rules/deepwork-governance.yaml
 
 crons:
-  - crons/town-crons.yaml
-  - crons/coordinator-crons.yaml
   - crons/worker-crons.yaml
-  - crons/release-automation.yaml
 
 knowledge:
+  - knowledge/deepwork-mind-setup.md
+  - knowledge/deepwork-mind-tools.md
+  - knowledge/hooks-reference.md
+  - knowledge/bead-audit-plugin.md
+  - knowledge/plugins-reference.md
   - knowledge/anti-patterns.md
   - knowledge/patterns.md
   - knowledge/decisions.md
-  - knowledge/operations.md
-  - knowledge/products.md
-  - knowledge/troubleshooting.md
   - knowledge/conventions.md
-  - knowledge/hooks-reference.md
-  - knowledge/formulas-reference.md
-  - knowledge/plugins-reference.md
+  - knowledge/products.md
+  - knowledge/rules.md
   - knowledge/shared-knowledge.md
   - knowledge/bug-fixes.md
-  - knowledge/crew-structure.md
-  - knowledge/mail-routing.md
-  - knowledge/session-handoffs.md
-  - knowledge/worker-sla.md
-  - knowledge/account-cycling.md
-  - knowledge/offloading.md
-  - knowledge/rules.md
+  - knowledge/troubleshooting.md
 
 formulas:
-  # Core work lifecycle
-  - formulas/mol-polecat-work.formula.toml
-  - formulas/mol-polecat-base.formula.toml
-  - formulas/mol-polecat-commit.formula.toml
-  - formulas/mol-do-work.formula.toml
-  - formulas/mol-scoped-work.formula.toml
-  # Wasteland
-  - formulas/mol-dog-wasteland-sync.formula.toml
-  # (63 total formulas in formulas/ directory)
+  - formulas/beads-workflow.formula.toml
+  - formulas/beads-creation-expansion.formula.toml
+  - formulas/beads-release.formula.toml
+  - formulas/beads-review-to-plan-expansion.formula.toml
+  - formulas/code-review.formula.toml
+  - formulas/design.formula.toml
+  - formulas/cooking.formula.toml
 
 scripts:
-  # Automation
-  - scripts/mayor/pack-update.sh
-  - scripts/mayor/readme-release.sh
-  - scripts/mayor/gitea-to-github.sh
-  - scripts/mayor/wasteland-push.sh
-  - scripts/mayor/thread-guardrail.sh
-  - scripts/mayor/log-rotate.sh
-  # Wasteland hooks
-  - scripts/wasteland-on-create.sh
-  - scripts/wasteland-on-close.sh
-  # Knowledge
+  - scripts/readme-release.sh
+  - scripts/changelog/append.sh
   - scripts/knowledge/capture.sh
-  - scripts/knowledge/cron-evolve.sh
   - scripts/knowledge/evolve.sh
+  - scripts/knowledge/cron-evolve.sh
   - scripts/knowledge/on-bead-close.sh
   - scripts/knowledge/health-check.sh
-  # Changelog
-  - scripts/changelog/append.sh
-  # CLI
-  - bin/gt-changelog
+
+skills:
+  - skills/gt-mesh/
+  - skills/gt-mesh-contributor/
+  - skills/gt-mesh-setup/
 
 hooks:
   - hooks/claude.json
 
-docs:
-  - docs/ARCHITECTURE.md
-  - docs/GLOSSARY.md
-  - docs/RUNBOOKS.md
-  - docs/wasteland/ONBOARDING.md
-  - docs/changelog/README.md
-
 blueprints:
-  - blueprints/deepwork-corp/blueprint.yaml
+  - blueprints/deepwork-corp/

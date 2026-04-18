@@ -1,51 +1,73 @@
-# Hooks Reference — Claude Code Lifecycle Hooks
+# Hooks Reference — Claude Code (and any harness with hooks)
 
-Gas Town uses Claude Code hooks to inject behavior at key moments in every agent's lifecycle.
+Deepwork uses Claude Code hooks as the deterministic substrate that makes the
+flywheel (memory / docs / release / audit) work across every agent without
+relying on the LLM to remember to call tools.
 
-## Shared Base (~/.gt/hooks-base.json)
+All hook scripts live under `~/.claude-accounts/<account>/hooks/` and are
+mirrored into each account so hooks survive an account switch. Paths below
+resolve via the `~/.claude` symlink that flips between accounts.
 
-Applied to ALL agents via `gt hooks sync`.
+## Active hooks (2026-04-18+)
 
-| Event | Matcher | Command | Purpose |
-|-------|---------|---------|---------|
-| SessionStart | (all) | `gt prime --hook; cold-start-recovery.sh` | Load role context, recover from crashes |
-| Stop | (all) | `graceful-handoff.sh --reason session-stop; gt costs record` | Save state to mail, log changelog, record costs |
-| PreCompact | (all) | `gt handoff --auto --collect; graceful-handoff.sh --reason compaction` | Preserve context before compression |
-| UserPromptSubmit | (all) | `timeout 5 gt mail check --inject` | Check for incoming mail on every user message |
-| PreToolUse | `Bash(gh pr create*)` | `gt tap guard pr-workflow` | Block GitHub PRs, enforce Gitea |
-| PreToolUse | `Bash(git checkout -b*)` | `gt tap guard pr-workflow` | Control branching |
-| PreToolUse | `Bash(git switch -c*)` | `gt tap guard pr-workflow` | Control branching |
-| PreToolUse | `Task` | `gt tap guard task-dispatch` | Intercept task creation |
+| Event | Matcher | Script | Purpose |
+|---|---|---|---|
+| `PreToolUse` | `Write\|Edit` | `readme-guard.sh` | Refuses edits that would nuke a README/CHANGELOG unless the prompt explicitly asked |
+| `PostToolUse` | `Bash` | `post-close-emit.sh` | On `bd close` / `bd done` / `gt done` / `gt close`, emits `bead.closed` or `epic.closed` into `pipeline_events` for downstream handlers |
+| `PostToolUse` | `Bash` | `epic-mountain-guard.sh` | Nudges if an epic is created without the expected mountain shape (children + blocks) |
+| `PostToolUse` | `Write\|Edit` | `memory-mirror.sh` | Auto-captures edited file paths into agent scratch memory for next-session recall |
+| `SessionStart` | — | `memory-recall-session-start.sh` | Pulls recent memories for the current project and prepends them to the model's system context |
+| `PreCompact` | — | `deepwork_intelligence/agents/handoff/precompact_hook.sh` | Dumps session state + open beads into a handoff bead before context is compacted |
 
-## Hook Scripts
+## Account-sync rule
 
-### graceful-handoff.sh
-Runs on every session end (Stop) and compaction (PreCompact).
-- Collects: hooked work, git state, recent events, inbox count
-- Sends handoff mail to self (pinned, permanent)
-- Logs session activity to changelog (if dirty work or hooked bead)
-- Falls back to /tmp file if Dolt is down
+Every account under `~/.claude-accounts/` (pratham, pratham_cc1, pratham_cc3)
+must have:
+- a `hooks/` directory with **identical script contents**
+- a `settings.json` whose `hooks` block references `~/.claude/hooks/*.sh`
 
-### cold-start-recovery.sh
-Runs on SessionStart when gt prime detects no handoff context.
-- Queries event log to reconstruct predecessor's state
-- Prints context summary injected into agent prompt
+When the `~/.claude` symlink flips (account switch), the hook path resolves
+to the newly-active account's `hooks/`. Missing hooks in any account
+silently kills the flywheel — we saw this on 2026-04-17 (README/release
+stopped updating for 4 hours after a switch).
 
-## Known Issues
+**Audit command:**
 
-### Mayor override is weaker than base
-Mayor's settings.json replaces (not extends) the base hooks. Missing:
-- graceful-handoff.sh on Stop
-- handoff collection on PreCompact
-- Task guard on PreToolUse
+```bash
+diff <(ls ~/.claude-accounts/pratham_cc1/hooks/) \
+     <(ls ~/.claude-accounts/pratham/hooks/) \
+     <(ls ~/.claude-accounts/pratham_cc3/hooks/)
+```
 
-Fix: align mayor override with base, or remove override and rely on base.
+Must produce empty output.
 
-## Per-Role Overlays
+## The `post-close-emit.sh` contract
 
-The reference implementation (gascity) supports per-role overlays:
-- Default: just PreCompact handoff
-- Witness: PreToolUse blockers that prevent patrol formula issues
-- These are defined in pack overlay directories
+The single most important hook — it's the event bus for the flywheel.
 
-Gas Town currently has no per-role overlays (empty ~/.gt/hooks-overrides/).
+On every `bd close <id>` or equivalent command, the hook:
+1. Extracts bead IDs from the command line
+2. Looks up the bead type via `bd show --json`
+3. Calls `mayor.lib.events.emit_event("bead.closed", ...)` or
+   `emit_event("epic.closed", ...)` into the shared `pipeline_events` table
+4. Disowns the subprocess so the command returns instantly — the hook
+   never blocks the agent
+
+Downstream handlers (docs_from_epic, auto-release, bead_audit plugin, etc)
+poll `pipeline_events` and react. Without this hook, everything downstream
+sits idle. When onboarding a new agent, verify the hook fires by closing a
+throwaway bead and checking the `pipeline_events` table for a new row.
+
+## Productized variant (post-v5 config pack)
+
+`di_core/mind_events/` is a harness-agnostic, config-driven version of the
+same pipeline. `MIND_ENABLE_WASTELAND=0 MIND_ENABLE_BEAD_AUDIT=1` turns off
+Gas-Town-specific handlers while keeping the agentic audit plugin active —
+that's what a Deepwork Mind install outside Gas Town ships with.
+
+## Mandate: `gt` only, never `gc`
+
+The deprecated `gc` (gas-city) CLI is not used. If you see `gc prime` or
+`gc nudge` anywhere, replace with `gt prime` / `gt nudge`. Locked owner
+rule from memory: mixing `gc` and `gt` in the same environment breaks the
+hook pipeline.
